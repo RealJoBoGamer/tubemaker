@@ -2,9 +2,23 @@
 (function () {
   const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 
-  function svgToCanvas(doc, pixelWidth) {
+  // Fonts must be embedded in the SVG, or the browser renders the image with a fallback font.
+  let fontCSSPromise = null;
+  const FONTS = [['London Tube', 'assets/fonts/london-tube.ttf', 'truetype'], ['Railway', 'assets/fonts/railway.woff', 'woff']];
+  function fontCSS() {
+    if (!fontCSSPromise) {
+      fontCSSPromise = Promise.all(FONTS.map(([name, url, fmt]) => fetch(url)
+        .then(r => (r.ok ? r.blob() : Promise.reject(new Error('font'))))
+        .then(b => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); }))
+        .then(data => `@font-face{font-family:'${name}';src:url(${data}) format('${fmt}');}`)
+        .catch(() => ''))).then(parts => parts.join(''));
+    }
+    return fontCSSPromise;
+  }
+
+  async function svgToCanvas(doc, pixelWidth) {
     const scale = pixelWidth / doc.width;
-    const svg = window.TubeRender.renderSVG(doc, { scale });
+    const svg = window.TubeRender.renderSVG(doc, { scale, fontCSS: await fontCSS() });
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
@@ -43,8 +57,8 @@
     download(blob, safeName(doc) + '.png');
   }
 
-  function exportSVG(doc) {
-    const svg = window.TubeRender.renderSVG(doc, { scale: 1 });
+  async function exportSVG(doc) {
+    const svg = window.TubeRender.renderSVG(doc, { scale: 1, fontCSS: await fontCSS() });
     download(new Blob([svg], { type: 'image/svg+xml' }), safeName(doc) + '.svg');
   }
 
@@ -95,5 +109,5 @@
     return canvas.toDataURL('image/png');
   }
 
-  window.TubeExport = { exportPNG, exportPDF, exportSVG, exportJSON, thumbnail, download, PAPER };
+  window.TubeExport = { fontCSS, exportPNG, exportPDF, exportSVG, exportJSON, thumbnail, download, PAPER };
 })();

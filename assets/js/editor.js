@@ -357,6 +357,7 @@
     const st = addStation(mid[0], mid[1]);
     st.x = Math.round(mid[0] * 10) / 10; st.y = Math.round(mid[1] * 10) / 10;
     const e = state.doc.edges[key];
+    if (e && e.lines) delete e.lines; // traced tracks no longer apply once split
     if (e && e.via && e.via.length && (e.shape || 'auto') === 'auto') {
       // pts are oriented a->b and a < b, so via order matches
       const viaA = pts.slice(1, cut), viaB = pts.slice(cut, pts.length - 1);
@@ -494,19 +495,45 @@
   function captureEdgesFor(ids) {
     const set = new Set(ids);
     const edges = [];
+    const weights = pts => {
+      const cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      const total = cum[cum.length - 1] || 1;
+      return cum.map(c => c / total);
+    };
     for (const [k, e] of Object.entries(state.doc.edges)) {
-      if (!e.via || !e.via.length) continue;
       const [a, b] = k.split('|');
       if (!set.has(a) && !set.has(b)) continue;
       const A = stationById(a), B = stationById(b);
       if (!A || !B) continue;
-      const pts = [[A.x, A.y], ...e.via, [B.x, B.y]];
-      const cum = [0];
-      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-      const total = cum[cum.length - 1] || 1;
-      edges.push({ key: k, a, b, via: e.via.map(p => p.slice()), t: e.via.map((_, i) => cum[i + 1] / total) });
+      if (e.via && e.via.length) {
+        const t = weights([[A.x, A.y], ...e.via, [B.x, B.y]]).slice(1, -1);
+        edges.push({ key: k, a, b, get: () => e.via, set: v => { e.via = v; }, pts: e.via.map(p => p.slice()), t });
+      }
+      // traced tracks (template): each line's own polyline, ends included
+      for (const lid of Object.keys(e.lines || {})) {
+        const pts = e.lines[lid];
+        edges.push({ key: k, a, b, set: v => { e.lines[lid] = v; }, pts: pts.map(p => p.slice()), t: weights(pts) });
+      }
     }
+    // extra circles of station complexes move with their station
+    const extras = [];
+    for (const id of ids) for (const x of stationById(id).extra || []) extras.push({ id, x, ox: x.x, oy: x.y });
+    edges.extras = extras;
     return edges;
+  }
+
+  /** Re-apply captured bends after stations moved (disp: id -> [dx, dy]). */
+  function moveEdges(edges, disp) {
+    const r = v => Math.round(v * 10) / 10;
+    for (const e of edges) {
+      const da = disp.get(e.a) || [0, 0], db = disp.get(e.b) || [0, 0];
+      e.set(e.pts.map((v, i) => [r(v[0] + da[0] * (1 - e.t[i]) + db[0] * e.t[i]), r(v[1] + da[1] * (1 - e.t[i]) + db[1] * e.t[i])]));
+    }
+    for (const x of edges.extras || []) {
+      const d = disp.get(x.id) || [0, 0];
+      x.x.x = r(x.ox + d[0]); x.x.y = r(x.oy + d[1]);
+    }
   }
 
   function onPointerDown(evt) {
@@ -687,13 +714,7 @@
         s.y = Math.round((o.y + sy) * 10) / 10;
         disp.set(o.id, [sx, sy]);
       }
-      for (const e of dr.edges) {
-        const da = disp.get(e.a) || [0, 0], db = disp.get(e.b) || [0, 0];
-        state.doc.edges[e.key].via = e.via.map((v, i) => [
-          Math.round((v[0] + da[0] * (1 - e.t[i]) + db[0] * e.t[i]) * 10) / 10,
-          Math.round((v[1] + da[1] * (1 - e.t[i]) + db[1] * e.t[i]) * 10) / 10,
-        ]);
-      }
+      moveEdges(dr.edges, disp);
       changed(true, false);
     } else if (dr.type === 'label') {
       const st = stationById(dr.id);
@@ -797,12 +818,9 @@
     pushHistory();
     if (ids.length) {
       const edges = captureEdgesFor(ids);
-      const set = new Set(ids);
+      const disp = new Map(ids.map(id => [id, [dx, dy]]));
       for (const id of ids) { const s = stationById(id); s.x += dx; s.y += dy; }
-      for (const e of edges) {
-        const da = set.has(e.a) ? [dx, dy] : [0, 0], db = set.has(e.b) ? [dx, dy] : [0, 0];
-        state.doc.edges[e.key].via = e.via.map((v, i) => [v[0] + da[0] * (1 - e.t[i]) + db[0] * e.t[i], v[1] + da[1] * (1 - e.t[i]) + db[1] * e.t[i]]);
-      }
+      moveEdges(edges, disp);
     } else if (sel && (sel.kind === 'symbol' || sel.kind === 'text')) {
       const o = (sel.kind === 'symbol' ? state.doc.symbols : state.doc.texts).find(x => x.id === sel.id);
       o.x += dx; o.y += dy;
@@ -971,6 +989,12 @@
         ${field('X', `<input id="propX" type="number" step="1" value="${st.x}">`)}
         ${field('Y', `<input id="propY" type="number" step="1" value="${st.y}">`)}
       </div>
+      <div class="row2">
+        ${field('Fare zone', `<input id="propZone" type="text" maxlength="8" value="${esc(st.zone || '')}" placeholder="e.g. 1 or 2/3">`)}
+        ${field('TfL id', st.naptan ? `<a class="small" href="https://tfl.gov.uk/hub/stop/${esc(st.naptan)}" target="_blank" rel="noopener">${esc(st.naptan)}</a>` : '<span class="small muted">–</span>')}
+      </div>
+      <button class="btn small" id="propTfl">Look up on TfL</button>
+      ${checkbox('propBoth', 'Label boxed (station in both fare zones)', !!st.labelBox)}
       <h4>Key symbols</h4>
       ${field('Interchange circle', `<select id="propInter"><option value="auto">Automatic</option><option value="yes">Always</option><option value="no">Never (use tick)</option></select>`)}
       ${field('Step-free access', `<select id="propStep"><option value="none">None</option><option value="platform">Street to platform</option><option value="train">Street to train</option></select>`)}
@@ -1017,6 +1041,29 @@
       if (!l.branches.length) l.branches.push([st.id]);
       else l.branches[l.branches.length - 1].push(st.id);
     }));
+    bind('propZone', 'change', e => edit(() => { st.zone = e.target.value.trim(); }));
+    bind('propBoth', 'change', e => edit(() => {
+      if (!e.target.checked) { st.labelBox = null; return; }
+      // box around the current label
+      const S = state.doc.settings, size = S.labelSize * (st.labelScale || 1), lh = size * (S.labelLeading || 1.12);
+      const w = Math.max(...st.label.lines.map(t => R.textWidth(t, size, S.font, '500'))) + 8;
+      const h = st.label.lines.length * lh + 6;
+      const x0 = st.label.anchor === 'end' ? st.label.dx - w + 4 : st.label.anchor === 'middle' ? st.label.dx - w / 2 : st.label.dx - 4;
+      st.labelBox = { dx: x0, dy: st.label.dy - size * 0.95, w, h };
+    }));
+    bind('propTfl', 'click', async () => {
+      const btn = $('#propTfl');
+      btn.disabled = true; btn.textContent = 'Asking TfL…';
+      try {
+        const r = await API.tflLookup(st.name);
+        edit(() => {
+          st.naptan = r.naptan;
+          if (r.zone) st.zone = r.zone;
+          st.nationalRail = st.nationalRail || r.nationalRail;
+        });
+        toast(`${r.name}: zone ${r.zone || '?'} · ${r.lines.join(', ') || 'no lines listed'}${r.nationalRail ? ' · National Rail' : ''}${r.lift ? ' · lift access: ' + r.lift : ''}`, 6000);
+      } catch (e) { toast(e.message, 5000); btn.disabled = false; btn.textContent = 'Look up on TfL'; }
+    });
     bind('propConnect', 'click', () => { setTool('connector'); state.connectorStart = st.id; status('Click the station to connect to'); });
     bind('propDelete', 'click', deleteSelection);
   }
@@ -1081,6 +1128,7 @@
         <button data-shape="elbow1" class="${shape === 'elbow1' ? 'active' : ''}">Elbow ⌐</button>
         <button data-shape="elbow2" class="${shape === 'elbow2' ? 'active' : ''}">Elbow ⟋</button>
       </div>
+      ${e.lines ? '<p class="muted small">Traced from the TfL map. Pick a shape to redraw it.</p><button class="btn small" id="edStraight">Use automatic 45° shape</button>' : ''}
       ${e.via && e.via.length ? `<p class="muted small">${e.via.length} bend points — drag the blue handles to adjust.</p>
         <button class="btn small" id="edStraight">Remove bends</button>` : `<button class="btn small" id="edAddBend">Add a bend point</button>`}
       <hr>
@@ -1091,7 +1139,7 @@
       // "Auto 45°" means: no bend points, pick the elbow automatically
       state.doc.edges[key] = btn.dataset.shape === 'auto' && !(cur.via && cur.via.length) ? { shape: 'auto' } : Object.assign(cur, { shape: btn.dataset.shape });
     }));
-    bind('edStraight', 'click', () => edit(() => { state.doc.edges[key].via = []; state.doc.edges[key].shape = 'auto'; }));
+    bind('edStraight', 'click', () => edit(() => { state.doc.edges[key] = { shape: 'auto' }; }));
     bind('edAddBend', 'click', () => edit(() => {
       const [P, Q] = a < b ? [A, B] : [B, A];
       state.doc.edges[key] = { shape: 'auto', via: [[(P.x + Q.x) / 2, (P.y + Q.y) / 2]] };
@@ -1501,6 +1549,8 @@
 
   async function init() {
     setupUI();
+    // labels are measured for layout, so wait for the map font
+    try { await Promise.race([Promise.all([document.fonts.load("12px 'London Tube'"), document.fonts.load("12px Railway")]), new Promise(r => setTimeout(r, 2500))]); } catch (e) { /* ignore */ }
     const params = new URLSearchParams(location.search);
     const remix = params.get('remix') || params.get('map');
     let doc = null;
@@ -1521,8 +1571,16 @@
         toast('Your saved map was straightened to 0°/45°/90° tracks (use New ▸ TfL template to start fresh)', 5000);
       }
     }
+    let upgraded = false;
+    if (doc && doc.title === 'London Underground (template)' && (doc.templateVersion || 0) < 3) {
+      // an older copy of the template: switch to the new TfL-accurate one (Ctrl+Z restores)
+      state.history.push(JSON.stringify(D.normalize(doc)));
+      doc = null;
+      upgraded = true;
+    }
     if (!doc) doc = D.templateDoc();
     state.doc = D.normalize(doc);
+    if (upgraded) setTimeout(() => toast('Updated to the new TfL template (Ctrl+Z brings back your old copy)', 6000), 300);
     state.activeLineId = state.doc.lines[0] ? state.doc.lines[0].id : null;
     afterDocReplaced(true);
     setTool('select');

@@ -1,7 +1,7 @@
 /* Renders a map document to an SVG string. Used for the live editor canvas,
  * PNG/PDF export and community thumbnails. */
 (function () {
-  const { SYMBOLS, NAVY } = window.TubeSymbols;
+  const { SYMBOLS, NAVY, FIT } = window.TubeSymbols;
   const D = window.TubeDoc;
 
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -73,7 +73,7 @@
     switch (line.style) {
       case 'double':
         return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round" ${extra}/>` +
-          `<path d="${d}" fill="none" stroke="#fff" stroke-width="${r1(lw * 0.38)}" stroke-linejoin="round"/>`;
+          `<path d="${d}" fill="none" stroke="#fff" stroke-width="${r1(lw * 0.36)}" stroke-linejoin="round"/>`;
       case 'dashed':
         return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round" stroke-dasharray="${lw * 1.8} ${lw * 0.9}" ${extra}/>`;
       case 'dotted':
@@ -101,8 +101,10 @@
 
   /** Points for one line travelling a -> b, already offset for parallel running. */
   function linePoints(doc, idx, geo, lineId, a, b) {
-    const pts = D.edgePoints(doc, idx, a, b);
     const key = D.edgeKey(a, b);
+    const own = D.ownLinePoints(doc, key, lineId, a, b);
+    if (own) return own; // traced path of this very line (keeps TfL's spacing)
+    const pts = D.edgePoints(doc, idx, a, b);
     let d = (geo.offsets.get(key) || new Map()).get(lineId) || 0;
     if (!(a < b)) d = -d;
     return offsetPolyline(pts, d);
@@ -110,7 +112,7 @@
 
   function labelMetrics(st, S) {
     const size = S.labelSize * (st.labelScale || 1);
-    const lh = size * 1.12;
+    const lh = size * (S.labelLeading || 1.12);
     const lines = st.label.lines.length ? st.label.lines : [st.name];
     const widths = lines.map(t => textWidth(t, size, S.font, '500'));
     return { size, lh, lines, widths, maxW: Math.max(0, ...widths) };
@@ -153,6 +155,7 @@
       if (D.isInterchange(s, idx)) used.add('interchange');
       for (const i of stationIcons(s)) used.add(i);
       if (s.closed) used.add('closed');
+      if (s.labelBox) used.add('both-zones');
     }
     for (const c of doc.connectors) used.add(c.type === 'internal' ? 'internal-interchange' : 'walk');
     for (const s of doc.symbols) used.add(s.type);
@@ -217,23 +220,35 @@
     if (S.showZones) {
       out.push('<g class="zones">');
       for (const z of doc.zones) {
+        if (z.rings && z.rings.length) {
+          const d = z.rings.map(r => 'M' + r.map(p => `${p[0]},${p[1]}`).join('L') + 'Z').join(' ');
+          out.push(z.fill === 'none'
+            ? `<path d="${d}" fill="none" stroke="${esc(z.stroke || '#fff')}" stroke-width="${z.strokeWidth || 4}" stroke-linejoin="round" pointer-events="none"/>`
+            : `<path d="${d}" fill="${esc(z.fill || '#eee')}" fill-rule="evenodd" data-kind="zone" data-id="${esc(z.id)}"/>`);
+          continue;
+        }
         const pts = z.points.map(p => p.join(',')).join(' ');
         out.push(`<polygon points="${pts}" fill="${esc(z.fill || '#eee')}" data-kind="zone" data-id="${esc(z.id)}"/>`);
       }
       for (const z of doc.zones) {
-        if (!z.points.length) continue;
+        if (!z.points.length || !z.label) continue;
         const p = z.points[0];
         out.push(`<text x="${p[0] + 6}" y="${p[1] + 58}" font-size="64" font-weight="bold" fill="#d9d9d9" font-family="${esc(S.font)}" pointer-events="none">${esc(z.label)}</text>`);
       }
       out.push('</g>');
     }
+    // Text placed behind the network (e.g. big zone numbers)
+    for (const t of doc.texts) if (t.back) out.push(textMarkup(t, S, sel));
 
     if (editing && S.showGrid) {
       out.push(`<rect x="0" y="0" width="${doc.width}" height="${doc.height}" fill="url(#grid)" pointer-events="none"/>`);
     }
 
     // River Thames
-    if (S.showRiver && doc.river.points.length > 1) {
+    if (S.showRiver && doc.river.polygons && doc.river.polygons.length) {
+      const d = doc.river.polygons.map(pl => 'M' + pl.map(p => `${p[0]},${p[1]}`).join('L') + 'Z').join(' ');
+      out.push(`<path class="river" data-kind="river" d="${d}" fill="#cceffc" stroke="#1ab5f1" stroke-width="1.2" stroke-linejoin="round" fill-rule="evenodd"/>`);
+    } else if (S.showRiver && doc.river.points.length > 1) {
       const d = roundedPath(doc.river.points, 40);
       const w = doc.river.width || 22;
       out.push(`<g class="river" data-kind="river">
@@ -243,7 +258,9 @@
 
     // Lines
     out.push('<g class="lines">');
-    for (const line of doc.lines) {
+    // stacking order: TfL's own for template lines, list order otherwise
+    const drawOrder = doc.lines.map((l, i) => [l, l.z != null ? l.z : 1e6 + i]).sort((a, b) => a[1] - b[1]).map(x => x[0]);
+    for (const line of drawOrder) {
       if (line.hidden) continue;
       for (const br of line.branches) {
         const ids = br.filter(id => idx.stations.has(id));
@@ -253,7 +270,7 @@
           if (ids[i] === ids[i + 1]) continue;
           pts = pts.concat(linePoints(doc, idx, geo, line.id, ids[i], ids[i + 1]));
         }
-        const d = roundedPath(pts, lw * 2.2);
+        const d = roundedPath(pts, S.cornerRadius || lw * 2.2);
         if (d) out.push(lineStroke(line, lw, d));
       }
     }
@@ -271,17 +288,23 @@
       out.push('</g>');
     }
 
+    // Interchange outlines are drawn in two passes (black, then white) so circles,
+    // station complexes and internal connectors merge into one shape like on the TfL map.
+    const RO = S.markerRadius || 7.7, RING = S.markerRing || 2.4;
+    const BAR_IN = RO * 0.5, BAR_OUT = BAR_IN + RING * 2;
+    const bars = [], rings = [];
     // Connectors between stations
     out.push('<g class="connectors">');
     for (const c of doc.connectors) {
-      const A = idx.stations.get(c.a), B = idx.stations.get(c.b);
-      if (!A || !B) continue;
+      const SA = idx.stations.get(c.a), SB = idx.stations.get(c.b);
+      if (!SA || !SB) continue;
+      const A = c.da ? { x: r1(SA.x + c.da[0]), y: r1(SA.y + c.da[1]) } : SA;
+      const B = c.db ? { x: r1(SB.x + c.db[0]), y: r1(SB.y + c.db[1]) } : SB;
       const isSel = sel && sel.kind === 'connector' && sel.id === c.id;
       if (c.type === 'internal') {
-        out.push(`<g data-kind="connector" data-id="${esc(c.id)}"><line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${isSel ? '#2f7cf6' : '#000'}" stroke-width="9.5"/>` +
-          `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#fff" stroke-width="4.6"/></g>`);
+        bars.push({ a: [A.x, A.y], b: [B.x, B.y], sel: isSel });
       } else {
-        out.push(`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${isSel ? '#2f7cf6' : '#000'}" stroke-width="3.2" stroke-dasharray="1.6 2.8" data-kind="connector" data-id="${esc(c.id)}"/>`);
+        out.push(`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${isSel ? '#2f7cf6' : '#000'}" stroke-width="3.6" stroke-dasharray="2.2 2.2" data-kind="connector" data-id="${esc(c.id)}"/>`);
       }
       if (editing) {
         out.push(`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="transparent" stroke-width="10" data-kind="connector" data-id="${esc(c.id)}"/>`);
@@ -290,7 +313,7 @@
     out.push('</g>');
 
     // Stations: markers, labels and icons
-    const markers = [], labels = [], hits = [];
+    const markers = [], labels = [], hits = [], icons = [], walkLines = [], boxes = [];
     for (const st of doc.stations) {
       const P = [st.x, st.y];
       const lids = [...(idx.stationLines.get(st.id) || [])];
@@ -302,16 +325,33 @@
       const labelDir = unit([lcx, lcy]);
       let markerR = 0;
 
-      if (inter) {
+      const iconHere = st.markerIcon && st.stepFree && st.stepFree !== 'none' && S.showIcons;
+      // further circles/icons of a station complex and how TfL joins them
+      const mpts = [P, ...(st.extra || []).map(ex => [ex.x, ex.y])];
+      const links = st.links || (st.extra || []).map((ex, i) => [0, i + 1, 'bar']);
+      for (const [i, j, type] of links) {
+        if (!mpts[i] || !mpts[j]) continue;
+        if (type === 'walk') walkLines.push(`<line x1="${r1(mpts[i][0])}" y1="${r1(mpts[i][1])}" x2="${r1(mpts[j][0])}" y2="${r1(mpts[j][1])}" stroke="${S.markerColor || '#000'}" stroke-width="3.6" stroke-dasharray="2.2 2.2"/>`);
+        else bars.push({ a: mpts[i], b: mpts[j], closed: st.closed });
+      }
+      for (const ex of st.extra || []) {
+        if (ex.kind === 'train' || ex.kind === 'platform') icons.push(SYMBOLS['step-free-' + ex.kind].draw(ex.x, ex.y, RO / 7));
+        else if (ex.kind === 'pier') icons.push(SYMBOLS['river-near'].draw(ex.x, ex.y, RO / 7));
+        else rings.push({ c: [ex.x, ex.y], r: RO, closed: st.closed });
+      }
+      if (iconHere) {
+        icons.push(SYMBOLS['step-free-' + st.stepFree].draw(st.x, st.y, RO / 7));
+        markerR = RO;
+      } else if (inter || (st.extra && st.extra.length)) {
         // grow the circle to cover parallel lines running through
         let spread = 0;
         for (const nb of idx.neighbours.get(st.id) || []) {
           const offs = geo.offsets.get(D.edgeKey(st.id, nb));
-          if (offs) for (const v of offs.values()) spread = Math.max(spread, Math.abs(v));
+          const e = doc.edges[D.edgeKey(st.id, nb)];
+          if (offs && !(e && e.lines)) for (const v of offs.values()) spread = Math.max(spread, Math.abs(v));
         }
-        markerR = Math.max(6.5, spread + lw * 0.5 + 1.2);
-        const stroke = st.closed ? '#999' : '#000';
-        markers.push(`<circle cx="${st.x}" cy="${st.y}" r="${r1(markerR)}" fill="#fff" stroke="${stroke}" stroke-width="2.4"/>`);
+        markerR = Math.max(RO, spread + lw * 0.5 + RING);
+        rings.push({ c: P, r: markerR, closed: st.closed });
       } else if (lids.length >= 1) {
         // tick on the label side, drawn on the outermost line
         let best = null;
@@ -327,12 +367,12 @@
           const proj = off[0] * n[0] + off[1] * n[1];
           if (!best || proj > best.proj) best = { lid, n, proj, start: pts[0] };
         }
+        const tl = S.tickLength || (lw * 0.5 + 5.5);
         if (best) {
           const line = idx.lines.get(best.lid);
-          const s0 = [best.start[0] + best.n[0] * lw * 0.3, best.start[1] + best.n[1] * lw * 0.3];
-          const e0 = [best.start[0] + best.n[0] * (lw * 0.5 + 5.5), best.start[1] + best.n[1] * (lw * 0.5 + 5.5)];
-          markers.push(`<line x1="${r1(s0[0])}" y1="${r1(s0[1])}" x2="${r1(e0[0])}" y2="${r1(e0[1])}" stroke="${esc(st.closed ? '#999' : line.color)}" stroke-width="${r1(lw * 0.72)}"/>`);
-          markerR = lw * 0.5 + 5.5;
+          const e0 = [best.start[0] + best.n[0] * tl, best.start[1] + best.n[1] * tl];
+          markers.push(`<line x1="${r1(best.start[0])}" y1="${r1(best.start[1])}" x2="${r1(e0[0])}" y2="${r1(e0[1])}" stroke="${esc(st.closed ? '#999' : line.color)}" stroke-width="${r1(S.tickWidth || lw * 0.72)}"/>`);
+          markerR = tl;
         } else {
           markers.push(`<circle cx="${st.x}" cy="${st.y}" r="5" fill="#fff" stroke="${NAVY}" stroke-width="2"/>`);
           markerR = 5;
@@ -344,21 +384,32 @@
       if (st.closed) markers.push(SYMBOLS.closed.draw(st.x + labelDir[0] * (markerR + 8), st.y + labelDir[1] * (markerR + 8), 0.8));
 
       // Label
-      if (S.showLabels) {
+      if (S.showLabels && !st.hideLabel) {
         const lx = st.x + st.label.dx, ly = st.y + st.label.dy;
+        if (st.labelBox) {
+          // "Station in both fare zones": white box with a grey border (under the markers)
+          const b = st.labelBox;
+          boxes.push(`<rect x="${r1(st.x + b.dx)}" y="${r1(st.y + b.dy)}" width="${r1(b.w)}" height="${r1(b.h)}" fill="#fff" stroke="#d3d2d2" stroke-width="1.6"/>`);
+        }
         const fill = st.closed ? '#9a9a9a' : esc(S.labelColor);
         const tspans = m.lines.map((t, i) => `<tspan x="${r1(lx)}" ${i ? `dy="${r1(m.lh)}"` : ''}>${esc(t)}</tspan>`).join('');
         labels.push(`<text x="${r1(lx)}" y="${r1(ly)}" font-size="${r1(m.size)}" font-family="${esc(S.font)}" font-weight="500" fill="${fill}" text-anchor="${st.label.anchor}" data-kind="label" data-id="${esc(st.id)}"${st.closed ? ' font-style="italic"' : ''}>${tspans}</text>`);
 
         // Icons in the label row
-        const icons = S.showIcons ? stationIcons(st) : [];
-        if (icons.length) {
+        const rowIcons = S.showIcons ? stationIcons(st).filter(ic => !((st.markerIcon || S.stepFreeInline === false) && ic.startsWith('step-free')) && !(st.railIcon && ic === 'national-rail')) : [];
+        if (S.showIcons && st.nationalRail && st.railIcon) labels.push(SYMBOLS['national-rail'].draw(st.x + st.railIcon.dx, st.y + st.railIcon.dy, 0.78));
+        // pictograms placed exactly where TfL put them
+        for (const ic of (S.showIcons && st.placedIcons) || []) {
+          if (SYMBOLS[ic.type]) labels.push(SYMBOLS[ic.type].draw(st.x + ic.dx, st.y + ic.dy, ic.w / ((FIT && FIT[ic.type]) || ic.w)));
+        }
+        if (S.inlineIcons === false) rowIcons.length = 0;
+        if (rowIcons.length) {
           const lastI = m.lines.length - 1;
           const iy = ly + lastI * m.lh - m.size * 0.36;
           let ix;
           if (st.label.anchor === 'end') {
             ix = lx - m.widths[lastI] - 4;
-            for (const ic of icons) {
+            for (const ic of rowIcons) {
               const w = ICON_W[ic] || 14;
               labels.push(SYMBOLS[ic].draw(ix - w / 2, iy, 0.82));
               ix -= w + 2;
@@ -366,7 +417,7 @@
           } else {
             const w0 = m.widths[lastI];
             ix = (st.label.anchor === 'middle' ? lx + w0 / 2 : lx + w0) + 4;
-            for (const ic of icons) {
+            for (const ic of rowIcons) {
               const w = ICON_W[ic] || 14;
               labels.push(SYMBOLS[ic].draw(ix + w / 2, iy, 0.82));
               ix += w + 2;
@@ -384,7 +435,14 @@
         hits.push(`<circle cx="${st.x}" cy="${st.y}" r="${r1(Math.max(markerR, 7) + 2)}" fill="transparent" data-kind="station" data-id="${esc(st.id)}" class="station-hit"/>`);
       }
     }
-    out.push('<g class="markers">', ...markers, '</g>');
+    const ringCol = c => (c ? '#999' : (S.markerColor || '#000'));
+    const outline = [];
+    for (const b of bars) outline.push(`<line x1="${r1(b.a[0])}" y1="${r1(b.a[1])}" x2="${r1(b.b[0])}" y2="${r1(b.b[1])}" stroke="${b.sel ? '#2f7cf6' : ringCol(b.closed)}" stroke-width="${r1(BAR_OUT)}"/>`);
+    for (const g of rings) outline.push(`<circle cx="${r1(g.c[0])}" cy="${r1(g.c[1])}" r="${r1(g.r)}" fill="${ringCol(g.closed)}"/>`);
+    for (const b of bars) outline.push(`<line x1="${r1(b.a[0])}" y1="${r1(b.a[1])}" x2="${r1(b.b[0])}" y2="${r1(b.b[1])}" stroke="#fff" stroke-width="${r1(BAR_IN)}"/>`);
+    for (const g of rings) outline.push(`<circle cx="${r1(g.c[0])}" cy="${r1(g.c[1])}" r="${r1(g.r - RING)}" fill="#fff"/>`);
+    out.push('<g class="boxes">', ...boxes, '</g>');
+    out.push('<g class="markers">', ...walkLines, ...markers, ...outline, ...icons, '</g>');
     out.push('<g class="labels">', ...labels, '</g>');
 
     // Free symbols and text
@@ -396,13 +454,7 @@
       out.push(`<g data-kind="symbol" data-id="${esc(s.id)}">${def.draw(s.x, s.y, s.scale || 1)}` +
         (editing ? `<circle cx="${s.x}" cy="${s.y}" r="${12 * (s.scale || 1)}" fill="transparent" stroke="${isSel ? '#2f7cf6' : 'none'}" stroke-width="2" stroke-dasharray="3 3"/>` : '') + '</g>');
     }
-    for (const t of doc.texts) {
-      const isSel = sel && sel.kind === 'text' && sel.id === t.id;
-      const lines = String(t.text).split('\n');
-      const size = t.size || 16;
-      const tsp = lines.map((ln, i) => `<tspan x="${t.x}" ${i ? `dy="${size * 1.15}"` : ''}>${esc(ln)}</tspan>`).join('');
-      out.push(`<text x="${t.x}" y="${t.y}" font-size="${size}" font-family="${esc(S.font)}" font-weight="${t.bold ? 'bold' : 'normal'}" fill="${esc(t.color || NAVY)}" text-anchor="${t.anchor || 'start'}" data-kind="text" data-id="${esc(t.id)}"${isSel ? ' text-decoration="underline"' : ''}>${tsp}</text>`);
-    }
+    for (const t of doc.texts) if (!t.back) out.push(textMarkup(t, S, sel));
     out.push('</g>');
 
     if (S.showKey && doc.key.visible && !opts.hideKey) out.push(renderKey(doc, idx, opts));
@@ -416,7 +468,7 @@
       // handles for selected zone / river
       if (sel && sel.kind === 'zone') {
         const z = doc.zones.find(z => z.id === sel.id);
-        if (z) {
+        if (z && z.points.length) {
           out.push(`<polygon points="${z.points.map(p => p.join(',')).join(' ')}" fill="none" stroke="#2f7cf6" stroke-width="2" stroke-dasharray="6 4" pointer-events="none"/>`);
           z.points.forEach((p, i) => out.push(`<circle cx="${p[0]}" cy="${p[1]}" r="7" class="handle" data-kind="zone-handle" data-id="${esc(z.id)}" data-i="${i}"/>`));
         }
@@ -438,6 +490,14 @@
     return out.join('\n');
   }
 
+  function textMarkup(t, S, sel) {
+    const isSel = sel && sel.kind === 'text' && sel.id === t.id;
+    const lines = String(t.text).split('\n');
+    const size = t.size || 16;
+    const tsp = lines.map((ln, i) => `<tspan x="${t.x}" ${i ? `dy="${size * 1.15}"` : ''}>${esc(ln)}</tspan>`).join('');
+    return `<text x="${t.x}" y="${t.y}" font-size="${size}" font-family="${esc(S.font)}" font-weight="${t.bold ? 'bold' : 'normal'}" fill="${esc(t.color || NAVY)}" text-anchor="${t.anchor || 'start'}" data-kind="text" data-id="${esc(t.id)}"${isSel ? ' text-decoration="underline"' : ''}>${tsp}</text>`;
+  }
+
   function gridDefs(grid) {
     return `<defs><pattern id="grid" width="${grid * 5}" height="${grid * 5}" patternUnits="userSpaceOnUse">
       <path d="M ${grid * 5} 0 L 0 0 0 ${grid * 5}" fill="none" stroke="#c7d2e6" stroke-width="1"/>
@@ -449,6 +509,7 @@
   function renderSVG(doc, opts = {}) {
     const scale = opts.scale || 1;
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${doc.width * scale}" height="${doc.height * scale}" viewBox="0 0 ${doc.width} ${doc.height}">` +
+      (opts.fontCSS ? `<defs><style>${opts.fontCSS}</style></defs>` : '') +
       renderInner(doc, Object.assign({}, opts, { editing: false })) + '</svg>';
   }
 

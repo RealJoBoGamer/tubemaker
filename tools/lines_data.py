@@ -250,12 +250,10 @@ DISPLAY = {
 
 # Words to search for in the reference PDF when they differ from the display name.
 SEARCH = {
-    "King's Cross St. Pancras": "King's Cross",
+    "King's Cross St. Pancras": "King's Cross & St Pancras International",
     "Edgware Road (Bakerloo)": "Edgware Road",
     "Hammersmith (H&C)": "Hammersmith",
     "Bethnal Green (Weaver)": "Bethnal Green",
-    "Cutty Sark for Maritime Greenwich": "Cutty Sark",
-    "Heathrow Terminals 2 & 3": "Heathrow Terminals 2",
 }
 
 # National Rail interchanges (key symbol), from the TfL station index.

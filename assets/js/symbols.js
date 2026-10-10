@@ -74,7 +74,9 @@
     },
     'both-zones': {
       label: 'Station in both fare zones',
-      draw: (x, y, s = 1) => `<g><rect x="${x - 12 * s}" y="${y - 7 * s}" width="${24 * s}" height="${14 * s}" fill="#fff" stroke="#bbb" stroke-width="${s}"/><text x="${x}" y="${y + 3 * s}" text-anchor="middle" font-size="${8 * s}" fill="${NAVY}" font-family="Arial, sans-serif">Stn</text></g>`,
+      draw: (x, y, s = 1) => `<g transform="translate(${x},${y}) scale(${s})"><rect x="-14" y="-9" width="28" height="18" fill="#fff" stroke="#d3d2d2" stroke-width="1.4"/>
+        <text x="0" y="-1.2" text-anchor="middle" font-size="7" fill="${NAVY}" font-family="'London Tube', Railway, Arial, sans-serif">Moor</text>
+        <text x="0" y="6" text-anchor="middle" font-size="7" fill="${NAVY}" font-family="'London Tube', Railway, Arial, sans-serif">Park</text></g>`,
     },
     'toilets': {
       label: 'Toilets',
@@ -90,5 +92,19 @@
     },
   };
 
-  window.TubeSymbols = { SYMBOLS, NAVY, RED };
+  // Use TfL's own artwork (assets/js/tfl-symbols.js) where available. `fit` is the
+  // size the symbol has at scale 1, matching the hand-drawn fallbacks above.
+  const OFFICIAL = window.TFL_SYMBOLS || {};
+  const FIT = {
+    'step-free-train': 14, 'step-free-platform': 14, 'national-rail': 16, 'airport': 14,
+    'river-near': 14, 'river-far': 10, 'coach': 18,
+  };
+  for (const [name, sym] of Object.entries(OFFICIAL)) {
+    if (!SYMBOLS[name] || !FIT[name]) continue;
+    const f = FIT[name] / Math.max(sym.w, 0.01);
+    SYMBOLS[name].draw = (x, y, s = 1) => `<g transform="translate(${x},${y}) scale(${(s * f).toFixed(4)})">${sym.svg}</g>`;
+    SYMBOLS[name].official = true;
+  }
+
+  window.TubeSymbols = { SYMBOLS, NAVY, RED, FIT };
 })();

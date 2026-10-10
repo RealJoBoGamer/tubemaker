@@ -101,44 +101,66 @@
   }
 
   /** Build an editable document from the TfL-derived template data. */
+  // Measurements of the TfL large print map, used by the template.
+  const TFL_STYLE = {
+    lineWidth: 5.7, cornerRadius: 9, labelSize: 12, labelLeading: 0.95,
+    markerRadius: 8.6, markerRing: 2.9, markerColor: '#231f20', tickLength: 7, tickWidth: 4,
+    stepFreeInline: false, inlineIcons: false, labelColor: '#263d96',
+    font: "Johnston100, 'London Tube', Railway, 'Gill Sans', 'Gill Sans MT', Arial, sans-serif",
+  };
+
+  /** Build an editable document from the TfL-derived template data. */
   function templateDoc() {
     const t = window.TUBE_TEMPLATE;
     const doc = blankDoc();
     doc.title = 'London Underground (template)';
+    doc.templateVersion = 3;
     doc.width = t.width;
     doc.height = t.height;
+    Object.assign(doc.settings, TFL_STYLE);
     doc.stations = t.stations.map(s => ({
       id: s.id, name: s.name, x: s.x, y: s.y,
       label: { lines: s.label.lines.slice(), dx: s.label.dx, dy: s.label.dy, anchor: s.label.anchor },
-      nationalRail: !!s.nationalRail, airport: !!s.airport, river: s.river ? 'near' : 'none', coach: !!s.coach,
-      stepFree: s.stepFree || 'none', interchange: 'auto', closed: false,
+      nationalRail: !!s.nationalRail, airport: !!s.airport, coach: !!s.coach,
+      river: s.river === true ? 'near' : (s.river || 'none'),
+      placedIcons: (s.icons || []).map(i => Object.assign({}, i)),
+      stepFree: s.stepFree || 'none', closed: false,
+      interchange: s.marker === 'interchange' ? 'yes' : s.marker === 'tick' ? 'no' : 'auto',
+      // TfL draws the step-free icon in place of the station marker
+      markerIcon: s.marker === 'train' || s.marker === 'platform',
+      extra: (s.extra || []).map(e => ({ x: e.x, y: e.y, kind: e.kind })),
+      links: (s.links || []).map(l => l.slice()),
+      railIcon: s.rail ? { dx: s.rail[0], dy: s.rail[1] } : null,
+      zone: s.tfl && s.tfl.zone ? s.tfl.zone : '',
+      naptan: s.tfl ? s.tfl.naptan : '',
+      labelBox: s.box ? { dx: s.box[0], dy: s.box[1], w: s.box[2], h: s.box[3] } : null,
+      hideLabel: !!s.hideLabel,
     }));
-    for (const l of t.lines) {
-      doc.lines.push({
-        id: l.id, name: l.name, color: l.color, style: l.style, group: l.group || '',
-        branches: l.branches.map(b => b.slice()), hidden: false,
-      });
-      for (const [k, via] of Object.entries(l.vias || {})) {
-        const [a, b] = k.split('>');
-        const key = edgeKey(a, b);
-        if (doc.edges[key]) continue; // first line to provide a shape wins
-        doc.edges[key] = { via: a < b ? via : via.slice().reverse() };
-      }
+    doc.lines = t.lines.map(l => ({
+      id: l.id, name: l.name, color: l.color, style: l.style, group: l.group || '',
+      branches: l.branches.map(b => b.slice()), hidden: false, z: l.z,
+    }));
+    for (const [key, e] of Object.entries(t.edges || {})) {
+      doc.edges[key] = { lines: Object.fromEntries(Object.entries(e.lines).map(([lid, pts]) => [lid, pts.map(p => p.slice())])) };
     }
     const ids = new Set(doc.stations.map(s => s.id));
-    doc.connectors = TEMPLATE_CONNECTORS.filter(([a, b]) => ids.has(a) && ids.has(b))
-      .map(([a, b, type]) => ({ id: uid('c'), a, b, type }));
-    // Zones centred between Oxford Circus and Bank.
-    const byId = Object.fromEntries(doc.stations.map(s => [s.id, s]));
-    const oc = byId['oxford-circus'], bank = byId['bank'];
-    const cx = oc && bank ? (oc.x + bank.x) / 2 : doc.width / 2;
-    const cy = oc && bank ? (oc.y + bank.y) / 2 + 60 : doc.height / 2;
-    doc.zones = makeZones(cx, cy);
-    doc.river = { points: (t.river || []).map(p => p.slice()), width: 22 };
-    // Straighten the traced layout so every track runs at 0/45/90 degrees.
-    octilinearize(doc);
-    doc.key = { x: 16, y: doc.height - 316, visible: true, title: 'Key to lines', columns: 3 };
-    doc.texts = [];
+    doc.connectors = (t.walks || TEMPLATE_CONNECTORS).filter(([a, b]) => ids.has(a) && ids.has(b)).map(([a, b, type, pa, pb]) => {
+      // exact ends (which circle of a complex) as offsets from each station
+      const A = doc.stations.find(s => s.id === a), B = doc.stations.find(s => s.id === b);
+      const c = { id: uid('c'), a, b, type };
+      if (pa && pb) { c.da = [pa[0] - A.x, pa[1] - A.y]; c.db = [pb[0] - B.x, pb[1] - B.y]; }
+      return c;
+    });
+    // Fare-zone shading, river and zone numbers copied from the TfL artwork.
+    doc.zones = (t.zones || []).map((z, i) => ({
+      id: 'zone-' + (i + 1), label: '', fill: z.fill, stroke: z.stroke, strokeWidth: z.strokeWidth,
+      points: [], rings: z.rings.map(r => r.map(p => p.slice())),
+    }));
+    doc.river = { points: [], polygons: (t.river || []).map(pl => pl.map(p => p.slice())), width: 22 };
+    doc.texts = (t.zoneNumbers || []).map((n, i) => ({
+      id: 'zn-' + i, x: n.x, y: n.y, text: n.text, size: n.size, color: '#e9e9e9', bold: false, anchor: 'start', back: true,
+    }));
+    doc.key = { x: 12, y: doc.height - 330, visible: true, title: 'Key to lines', columns: 3 };
     return doc;
   }
 
@@ -151,11 +173,12 @@
     out.stations = (out.stations || []).map(s => Object.assign({
       name: 'Station', label: { lines: [s.name || 'Station'], dx: 10, dy: 4, anchor: 'start' },
       nationalRail: false, airport: false, river: 'none', coach: false, stepFree: 'none', interchange: 'auto', closed: false,
+      extra: [], markerIcon: false, hideLabel: false,
     }, s));
     out.edges = out.edges || {};
     out.connectors = out.connectors || [];
     out.zones = out.zones || [];
-    out.river = out.river || { points: [], width: 22 };
+    out.river = Object.assign({ points: [], polygons: [], width: 22 }, out.river || {});
     out.symbols = out.symbols || [];
     out.texts = out.texts || [];
     out.key = Object.assign({ x: 20, y: out.height - 420, visible: true, title: 'Key to lines' }, out.key || {});
@@ -211,7 +234,7 @@
   function isInterchange(st, idx) {
     if (st.interchange === 'yes') return true;
     if (st.interchange === 'no') return false;
-    if ((idx.connectorsAt.get(st.id) || []).length > 0) return true;
+    if ((idx.connectorsAt.get(st.id) || []).length > 0 || (st.extra && st.extra.length)) return true;
     // Several lines are an interchange unless they all run along the same
     // track through the station (e.g. Circle + H&C at Goldhawk Road).
     const ln = idx.lineNeighbours.get(st.id);
@@ -226,6 +249,10 @@
     const key = edgeKey(a, b);
     const e = doc.edges[key] || {};
     let shape = e.shape || 'auto';
+    if (shape === 'auto' && e.lines && !(e.via && e.via.length)) {
+      const first = Object.keys(e.lines)[0];
+      if (first) return ownLinePoints(doc, key, first, a, b);
+    }
     if (shape === 'auto' && e.via && e.via.length) {
       const via = a < b ? e.via : e.via.slice().reverse();
       return [[A.x, A.y], ...via, [B.x, B.y]];
@@ -240,6 +267,14 @@
       return a < b ? pts : pts.reverse();
     }
     return [[A.x, A.y], [B.x, B.y]];
+  }
+
+  /** A line's own traced path along an edge (template tracks), oriented a -> b. */
+  function ownLinePoints(doc, key, lineId, a, b) {
+    const e = doc.edges[key];
+    if (!e || !e.lines || !e.lines[lineId] || (e.shape && e.shape !== 'auto') || (e.via && e.via.length)) return null;
+    const pts = e.lines[lineId].map(p => p.slice());
+    return a < b ? pts : pts.reverse();
   }
 
   function elbowPoint(P, Q, diagonalFirst) {
@@ -381,8 +416,10 @@
     }
     for (const s of doc.stations) {
       const p = pos.get(s.id);
-      s.x = Math.round(p[0]);
-      s.y = Math.round(p[1]);
+      const nx = Math.round(p[0]), ny = Math.round(p[1]);
+      for (const x of s.extra || []) { x.x += nx - s.x; x.y += ny - s.y; }
+      s.x = nx;
+      s.y = ny;
     }
 
     // Choose a shape for every track segment.
@@ -494,9 +531,13 @@
   /** Move every object on the map by (dx, dy). */
   function translateDoc(doc, dx, dy) {
     const mv = p => { p[0] += dx; p[1] += dy; };
-    for (const s of doc.stations) { s.x += dx; s.y += dy; }
-    for (const e of Object.values(doc.edges)) (e.via || []).forEach(mv);
-    for (const z of doc.zones) z.points.forEach(mv);
+    for (const s of doc.stations) { s.x += dx; s.y += dy; for (const x of s.extra || []) { x.x += dx; x.y += dy; } }
+    for (const e of Object.values(doc.edges)) {
+      (e.via || []).forEach(mv);
+      for (const pts of Object.values(e.lines || {})) pts.forEach(mv);
+    }
+    (doc.river.polygons || []).forEach(pl => pl.forEach(mv));
+    for (const z of doc.zones) { z.points.forEach(mv); (z.rings || []).forEach(r => r.forEach(mv)); }
     (doc.river.points || []).forEach(mv);
     for (const o of doc.symbols) { o.x += dx; o.y += dy; }
     for (const o of doc.texts) { o.x += dx; o.y += dy; }
@@ -535,7 +576,7 @@
 
   window.TubeDoc = {
     translateDoc, contentBounds, fitToContent,
-    octilinearize, octiDeviation, snapToRay, OCTI_TOLERANCE,
+    octilinearize, octiDeviation, snapToRay, OCTI_TOLERANCE, ownLinePoints, TFL_STYLE,
     VERSION, TFL_PRESETS, uid, edgeKey, blankDoc, templateDoc, normalize, buildIndex, isInterchange,
     edgePoints, makeZones, defaultSettings,
   };

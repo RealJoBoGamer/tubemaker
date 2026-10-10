@@ -5,7 +5,9 @@ function config(): array
 {
     static $cfg = null;
     if ($cfg === null) {
-        $cfg = require __DIR__ . '/config.php';
+        // config.php holds your own settings; fall back to the sample if it is missing
+        $file = is_file(__DIR__ . '/config.php') ? __DIR__ . '/config.php' : __DIR__ . '/config.sample.php';
+        $cfg = require $file;
     }
     return $cfg;
 }

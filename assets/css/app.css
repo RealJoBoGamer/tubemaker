@@ -1,3 +1,16 @@
+/* Railway Sans by Greg Fleming – open-source revival of Edward Johnston's 1916
+   Underground typeface, SIL Open Font License 1.1 (see assets/fonts/Railway-OFL.txt). */
+/* "London Tube" font (freeware, fontspace.com/london-tube-font-f2717) – close to TfL's New Johnston. */
+@font-face {
+  font-family: 'London Tube';
+  src: url('../fonts/london-tube.ttf') format('truetype');
+  font-display: block;
+}
+@font-face {
+  font-family: 'Railway';
+  src: url('../fonts/railway.woff') format('woff');
+  font-display: block;
+}
 :root {
   --navy: #1c2c6b;
   --red: #dc241f;
