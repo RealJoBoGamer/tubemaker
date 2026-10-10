@@ -6,8 +6,9 @@ Export it as PNG or PDF, and upload it to a community gallery that runs on PHP +
 (manageable entirely from phpMyAdmin).
 
 The template includes every Tube line, the DLR, the Elizabeth line and the six London Overground
-lines (Liberty, Lioness, Mildmay, Suffragette, Weaver, Windrush): 421 stations, traced track
-curves, interchange connectors, fare zones and the River Thames. **Thameslink, the London Cable
+lines (Liberty, Lioness, Mildmay, Suffragette, Weaver, Windrush): 421 stations, interchange
+connectors, fare zones and the River Thames, laid out schematically with every track running
+horizontal, vertical or at 45°. **Thameslink, the London Cable
 Car and London Trams are left out on purpose.**
 
 ## Features
@@ -18,8 +19,10 @@ Car and London Trams are left out on purpose.**
 - **Drawing**: click stations in order to draw a line, click empty space to create stations as
   you go, and click a segment to add a station into it. Lines that share track are drawn side by
   side automatically.
-- **Track shapes**: each segment can be curved (draggable bend points), straight, or a 45° elbow
-  in either direction.
+- **45° layout**: tracks always run at 0°, 45° or 90° with rounded corners. New stations snap to
+  45° rays from the previous one (hold Alt to place freely), dragged stations snap into line with
+  their neighbours, and **Map settings ▸ Straighten whole map to 45°** turns any map (or an old
+  save) into a schematic. Each segment can be straight, a 45° elbow either way, or use bend points.
 - **Key symbols**: interchange circles (added automatically where lines meet), internal
   interchange connectors and dotted walking links between stations, step-free access (to the
   platform or to the train), National Rail, airport, river services (less or more than 10
@@ -100,7 +103,10 @@ tools/                template generator (Python)
 
 `tools/build_template.py` reads the TfL PDF. It finds every station label in the text layer,
 finds the station marker where that station's line colours meet next to its label, and traces
-each line's own pixels between stations to recover the curves. Station lists and lines are
+each line's own pixels between stations. When the editor loads the template,
+`TubeDoc.octilinearize()` (in `assets/js/doc.js`) straightens it: it nudges stations so tracks
+run at exactly 0/45/90°, gives every other track one 45° bend, and steps tracks sideways where
+they would otherwise run through a station they don't serve. Station lists and lines are
 defined in `tools/lines_data.py`.
 
 ```bash

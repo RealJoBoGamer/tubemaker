@@ -46,6 +46,58 @@
     return S.snap ? Math.round(v / (S.grid / 2)) * (S.grid / 2) : Math.round(v * 10) / 10;
   }
 
+  const ODIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+
+  /** Snap p onto the nearest horizontal/vertical/45-degree ray from `from`, on the grid. */
+  function snapRay(from, p) {
+    const g = state.doc.settings.snap ? state.doc.settings.grid / 2 : 1;
+    let best = null;
+    for (const [cx, cy] of ODIRS) {
+      const l = Math.hypot(cx, cy);
+      const t = ((p[0] - from[0]) * cx + (p[1] - from[1]) * cy) / (l * l); // steps along (cx, cy)
+      const k = Math.round(t / g) * g;
+      const q = [from[0] + cx * k, from[1] + cy * k];
+      const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (!best || d < best.d) best = { q, d };
+    }
+    return best.q;
+  }
+
+  /**
+   * While dragging a single station, pull it into line (0/45/90 degrees) with its
+   * neighbours when it gets close; prefer a spot that lines up with two of them.
+   */
+  function alignToNeighbours(id, p) {
+    if (state.doc.settings.octilinear === false) return p;
+    const idx = D.buildIndex(state.doc);
+    const nbs = [...(idx.neighbours.get(id) || [])].map(n => idx.stations.get(n)).filter(Boolean);
+    if (!nbs.length) return p;
+    const tol = 10 / state.view.k;
+    const rays = [];
+    for (const n of nbs) for (const d of ODIRS) rays.push({ n, d });
+    let best = null;
+    const consider = (q, score) => {
+      const dist = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (dist < tol && (!best || score + dist < best.s)) best = { q, s: score + dist };
+    };
+    for (let i = 0; i < rays.length; i++) {
+      const { n, d } = rays[i];
+      const l2 = d[0] * d[0] + d[1] * d[1];
+      const t = ((p[0] - n.x) * d[0] + (p[1] - n.y) * d[1]) / l2;
+      consider([n.x + d[0] * t, n.y + d[1] * t], 0);
+      for (let j = i + 1; j < rays.length; j++) {
+        const r = rays[j];
+        if (r.n === n) continue;
+        const det = d[0] * -r.d[1] - d[1] * -r.d[0];
+        if (Math.abs(det) < 1e-9) continue;
+        const bx = r.n.x - n.x, by = r.n.y - n.y;
+        const s1 = (bx * -r.d[1] - by * -r.d[0]) / det;
+        consider([n.x + d[0] * s1, n.y + d[1] * s1], -tol); // lining up with two neighbours wins
+      }
+    }
+    return best ? best.q.map(v => Math.round(v * 10) / 10) : p;
+  }
+
   function worldPoint(evt) {
     const r = svg.getBoundingClientRect();
     const v = state.view;
@@ -142,7 +194,7 @@
     if (state.tool === 'line' && state.drawing && state.pointer) {
       const st = stationById(state.drawing.last);
       const l = lineById(state.drawing.lineId);
-      if (st && l) preview = { from: [st.x, st.y], to: state.pointer, color: l.color };
+      if (st && l) preview = { from: [st.x, st.y], to: linePlacement(state.pointer, state.lastEvt), color: l.color };
     }
     if (state.tool === 'connector' && state.connectorStart && state.pointer) {
       const st = stationById(state.connectorStart);
@@ -401,6 +453,13 @@
     changed();
   }
 
+  /** Where a click with the line tool puts a new station (kept at 0/45/90 degrees; Alt = free). */
+  function linePlacement(p, evt) {
+    const last = state.drawing && stationById(state.drawing.last);
+    if (!last || (evt && evt.altKey) || state.doc.settings.octilinear === false) return [snap(p[0]), snap(p[1])];
+    return snapRay([last.x, last.y], p);
+  }
+
   function finishDrawing() {
     if (!state.drawing) return;
     const line = lineById(state.drawing.lineId);
@@ -537,7 +596,9 @@
         if (empty || t.kind === 'edge') {
           if (!activeLine()) { toast('Add or choose a line first (left panel)'); return; }
           pushHistory();
-          const st = addStation(p[0], p[1]);
+          const q = linePlacement(p, evt);
+          const st = addStation(q[0], q[1]);
+          st.x = q[0]; st.y = q[1];
           state.history.pop(); // lineToolClick records the history step
           lineToolClick(st.id);
         }
@@ -589,6 +650,7 @@
   function onPointerMove(evt) {
     const p = worldPoint(evt);
     state.pointer = p;
+    state.lastEvt = { altKey: evt.altKey };
     $('#coords').textContent = `${Math.round(p[0])}, ${Math.round(p[1])}`;
     const dr = state.drag;
     if (!dr) {
@@ -614,7 +676,10 @@
     if (dr.type === 'stations') {
       const lead = dr.orig[0];
       // snap the lead station, move the others by the same amount
-      const sx = snap(lead.x + dx) - lead.x, sy = snap(lead.y + dy) - lead.y;
+      let target = [snap(lead.x + dx), snap(lead.y + dy)];
+      if (dr.orig.length === 1 && !evt.altKey) target = alignToNeighbours(lead.id, [lead.x + dx, lead.y + dy]) || target;
+      if (target[0] === lead.x + dx && target[1] === lead.y + dy) target = [snap(lead.x + dx), snap(lead.y + dy)];
+      const sx = target[0] - lead.x, sy = target[1] - lead.y;
       const disp = new Map();
       for (const o of dr.orig) {
         const s = stationById(o.id);
@@ -757,7 +822,7 @@
   const TOOL_HINTS = {
     select: 'Click to select · drag to move · drag empty space to pan · Shift+drag to box-select stations · scroll to zoom',
     station: 'Click anywhere to add a station',
-    line: 'Click stations in order to draw the active line · click empty space to create a station · click a segment to insert a station · Esc to finish',
+    line: 'Click stations in order to draw the active line · new stations snap to 45° (hold Alt for free placement) · click a segment to insert a station · Esc to finish',
     connector: 'Click two stations to join them with an interchange connector',
     symbol: 'Choose a key symbol below, then click on the map to place it',
     text: 'Click on the map to add free text',
@@ -1011,7 +1076,8 @@
       <div class="chips">${lids.map(id => { const l = lineById(id); return `<span class="chip" style="--c:${esc(l.color)}">${esc(l.name)}</span>`; }).join('')}</div>
       <h4>Shape</h4>
       <div class="seg-buttons">
-        <button data-shape="auto" class="${shape === 'auto' ? 'active' : ''}">${e.via && e.via.length ? 'Curved (bends)' : 'Straight'}</button>
+        <button data-shape="auto" class="${shape === 'auto' ? 'active' : ''}">${e.via && e.via.length ? 'Bend points' : 'Auto 45°'}</button>
+        <button data-shape="straight" class="${shape === 'straight' ? 'active' : ''}">Straight</button>
         <button data-shape="elbow1" class="${shape === 'elbow1' ? 'active' : ''}">Elbow ⌐</button>
         <button data-shape="elbow2" class="${shape === 'elbow2' ? 'active' : ''}">Elbow ⟋</button>
       </div>
@@ -1021,7 +1087,9 @@
       <button class="btn" id="edSplit">Insert station in the middle</button>
       <button class="btn danger" id="edDelete">Delete segment</button>`;
     box.querySelectorAll('[data-shape]').forEach(btn => btn.onclick = () => edit(() => {
-      state.doc.edges[key] = Object.assign(state.doc.edges[key] || {}, { shape: btn.dataset.shape });
+      const cur = state.doc.edges[key] || {};
+      // "Auto 45°" means: no bend points, pick the elbow automatically
+      state.doc.edges[key] = btn.dataset.shape === 'auto' && !(cur.via && cur.via.length) ? { shape: 'auto' } : Object.assign(cur, { shape: btn.dataset.shape });
     }));
     bind('edStraight', 'click', () => edit(() => { state.doc.edges[key].via = []; state.doc.edges[key].shape = 'auto'; }));
     bind('edAddBend', 'click', () => edit(() => {
@@ -1169,6 +1237,8 @@
       ${checkbox('dsIcons', 'Station symbols (step-free, rail…)', S.showIcons)}
       ${checkbox('dsGrid', 'Grid (editor only)', S.showGrid)}
       ${checkbox('dsSnap', 'Snap to grid', S.snap)}
+      ${checkbox('dsOcti', 'Keep tracks at 0° / 45° / 90°', S.octilinear !== false)}
+      <button class="btn small" id="dsStraighten">Straighten whole map to 45°</button>
       ${field('Grid size', `<input id="dsGridSize" type="number" min="2" max="100" value="${S.grid}">`)}
       <button class="btn small" id="dsFit">Fit canvas to map</button>
       <h4>Fare zones</h4>
@@ -1191,6 +1261,11 @@
     bind('dsIcons', 'change', e => edit(() => { S.showIcons = e.target.checked; }));
     bind('dsGrid', 'change', e => edit(() => { S.showGrid = e.target.checked; }));
     bind('dsSnap', 'change', e => edit(() => { S.snap = e.target.checked; }));
+    bind('dsOcti', 'change', e => edit(() => { S.octilinear = e.target.checked; }));
+    bind('dsStraighten', 'click', () => {
+      edit(() => { S.octilinear = true; D.octilinearize(d); });
+      toast('Map straightened: every track now runs at 0°, 45° or 90°');
+    });
     bind('dsGridSize', 'change', e => edit(() => { S.grid = Math.max(2, +e.target.value); updateGridDefs(); }));
     bind('dsFit', 'click', () => { edit(() => { D.fitToContent(d, 40); }); fitView(); });
     bind('dsZoneAdd', 'click', () => edit(() => {
@@ -1440,6 +1515,11 @@
     }
     if (!doc) {
       try { const saved = localStorage.getItem(AUTOSAVE_KEY); if (saved) doc = JSON.parse(saved); } catch (e) { doc = null; }
+      // Maps saved before 45-degree mode existed get straightened once.
+      if (doc && doc.settings && doc.settings.octilinear === undefined && doc.stations && doc.stations.length) {
+        doc = D.octilinearize(D.normalize(doc));
+        toast('Your saved map was straightened to 0°/45°/90° tracks (use New ▸ TfL template to start fresh)', 5000);
+      }
     }
     if (!doc) doc = D.templateDoc();
     state.doc = D.normalize(doc);

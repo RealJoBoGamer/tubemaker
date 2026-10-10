@@ -55,7 +55,7 @@
 
   function defaultSettings() {
     return {
-      lineWidth: 7, labelSize: 11, snap: true, grid: 10,
+      lineWidth: 7, labelSize: 11, snap: true, grid: 10, octilinear: true,
       showGrid: false, showZones: true, showRiver: true, showKey: true, showLabels: true, showIcons: true,
       background: '#ffffff', labelColor: '#1c2c6b', font: 'Arial, Helvetica, sans-serif',
     };
@@ -135,6 +135,8 @@
     const cy = oc && bank ? (oc.y + bank.y) / 2 + 60 : doc.height / 2;
     doc.zones = makeZones(cx, cy);
     doc.river = { points: (t.river || []).map(p => p.slice()), width: 22 };
+    // Straighten the traced layout so every track runs at 0/45/90 degrees.
+    octilinearize(doc);
     doc.key = { x: 16, y: doc.height - 316, visible: true, title: 'Key to lines', columns: 3 };
     doc.texts = [];
     return doc;
@@ -223,21 +225,21 @@
     const A = idx.stations.get(a), B = idx.stations.get(b);
     const key = edgeKey(a, b);
     const e = doc.edges[key] || {};
-    let pts;
-    const shape = e.shape || 'auto';
+    let shape = e.shape || 'auto';
     if (shape === 'auto' && e.via && e.via.length) {
       const via = a < b ? e.via : e.via.slice().reverse();
-      pts = [[A.x, A.y], ...via, [B.x, B.y]];
-    } else if (shape === 'elbow1' || shape === 'elbow2') {
-      // elbows are defined in canonical (sorted) direction so both traversals agree
-      const [P, Q] = a < b ? [A, B] : [B, A];
-      const mid = elbowPoint(P, Q, shape === 'elbow2');
-      pts = [[P.x, P.y], mid, [Q.x, Q.y]];
-      if (!(a < b)) pts.reverse();
-    } else {
-      pts = [[A.x, A.y], [B.x, B.y]];
+      return [[A.x, A.y], ...via, [B.x, B.y]];
     }
-    return pts;
+    // Elbows are defined in canonical (sorted) direction so both traversals agree.
+    const [P, Q] = a < b ? [A, B] : [B, A];
+    if (shape === 'auto' && doc.settings && doc.settings.octilinear !== false && octiDeviation(Q.x - P.x, Q.y - P.y) > OCTI_TOLERANCE) {
+      shape = bestElbow(idx, P, Q);
+    }
+    if (shape === 'elbow1' || shape === 'elbow2') {
+      const pts = [[P.x, P.y], elbowPoint(P, Q, shape === 'elbow2'), [Q.x, Q.y]];
+      return a < b ? pts : pts.reverse();
+    }
+    return [[A.x, A.y], [B.x, B.y]];
   }
 
   function elbowPoint(P, Q, diagonalFirst) {
@@ -248,6 +250,245 @@
       return diagonalFirst ? [P.x + sx * ady, Q.y] : [P.x + sx * (adx - ady), P.y];
     }
     return diagonalFirst ? [Q.x, P.y + sy * adx] : [P.x, P.y + sy * (ady - adx)];
+  }
+
+  /* ---------------------------------------------------- 45-degree geometry */
+
+  // Edges closer than this (degrees) to 0/45/90 are drawn as one straight segment.
+  const OCTI_TOLERANCE = 1;
+  const DIRS = [0, 1, 2, 3, 4, 5, 6, 7].map(i => [Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4)]);
+
+  /** Angle (degrees) between a vector and the nearest horizontal/vertical/diagonal. */
+  function octiDeviation(dx, dy) {
+    if (!dx && !dy) return 0;
+    const deg = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI) % 45;
+    return Math.min(deg, 45 - deg);
+  }
+
+  function nearestDir(dx, dy) {
+    let best = DIRS[0], bd = -Infinity;
+    const l = Math.hypot(dx, dy) || 1;
+    for (const u of DIRS) {
+      const d = (dx * u[0] + dy * u[1]) / l;
+      if (d > bd) { bd = d; best = u; }
+    }
+    return best;
+  }
+
+  /** Project p onto the nearest 0/45/90-degree ray from `from`. */
+  function snapToRay(from, p) {
+    const dx = p[0] - from[0], dy = p[1] - from[1];
+    const u = nearestDir(dx, dy);
+    const t = dx * u[0] + dy * u[1];
+    return [from[0] + u[0] * t, from[1] + u[1] * t];
+  }
+
+  /**
+   * Pick the elbow orientation that turns least where it meets the station's
+   * other tracks, so a line keeps running straight through its stations.
+   */
+  function bestElbow(idx, P, Q) {
+    let best = 'elbow1', bestCost = Infinity;
+    for (const shape of ['elbow1', 'elbow2']) {
+      const m = elbowPoint(P, Q, shape === 'elbow2');
+      const cost = turnCost(idx, P, Q, m) + turnCost(idx, Q, P, m);
+      if (cost < bestCost - 1e-6) { bestCost = cost; best = shape; }
+    }
+    return best;
+  }
+
+  function turnCost(idx, S, other, m) {
+    let tx = m[0] - S.x, ty = m[1] - S.y;
+    if (Math.hypot(tx, ty) < 0.5) { tx = other.x - S.x; ty = other.y - S.y; }
+    const tl = Math.hypot(tx, ty) || 1;
+    let cost = 0;
+    for (const nid of idx.neighbours.get(S.id) || []) {
+      const N = idx.stations.get(nid);
+      if (!N || N === other) continue;
+      const vx = N.x - S.x, vy = N.y - S.y, vl = Math.hypot(vx, vy) || 1;
+      // 0 when the other track leaves in exactly the opposite direction (straight through)
+      cost += 1 + (tx * vx + ty * vy) / (tl * vl);
+    }
+    return cost;
+  }
+
+  /**
+   * Turn any layout into a schematic one: stations are nudged so tracks that are
+   * nearly horizontal, vertical or diagonal become exactly so; every other track
+   * gets a single 45-degree bend. Curved bend points are removed.
+   */
+  function octilinearize(doc, opts = {}) {
+    const iterations = opts.iterations || 300;
+    const idx = buildIndex(doc);
+    const orig = new Map(doc.stations.map(s => [s.id, [s.x, s.y]]));
+    const pos = new Map(doc.stations.map(s => [s.id, [s.x, s.y]]));
+    const edges = [];
+    for (const key of idx.edgeLines.keys()) {
+      const [a, b] = key.split('|');
+      const A = orig.get(a), B = orig.get(b);
+      const e = doc.edges[key] || {};
+      // How far does the drawn track bulge away from the straight chord?
+      let bulge = 0, bend = null;
+      for (const v of e.via || []) {
+        const d = distToSegment(v, A, B);
+        if (d > bulge) { bulge = d; bend = v; }
+      }
+      const dev = octiDeviation(B[0] - A[0], B[1] - A[1]);
+      edges.push({ key, a, b, force: dev < 15 && bulge < 12, bend: bulge >= 12 ? bend : null });
+    }
+
+    // Relax: pull forced edges onto their nearest 0/45/90 direction, gently
+    // anchored to where the stations started so the geography survives.
+    const relax = (rounds) => {
+      for (let it = 0; it < rounds; it++) {
+        const delta = new Map(), count = new Map();
+        const add = (id, x, y) => {
+          const d = delta.get(id) || [0, 0];
+          d[0] += x; d[1] += y;
+          delta.set(id, d);
+          count.set(id, (count.get(id) || 0) + 1);
+        };
+        for (const e of edges) {
+          if (!e.force) continue;
+          const A = pos.get(e.a), B = pos.get(e.b);
+          const dx = B[0] - A[0], dy = B[1] - A[1];
+          const u = nearestDir(dx, dy);
+          const t = dx * u[0] + dy * u[1];
+          const ex = dx - u[0] * t, ey = dy - u[1] * t; // sideways error
+          add(e.a, ex / 2, ey / 2);
+          add(e.b, -ex / 2, -ey / 2);
+        }
+        const anchor = it < rounds * 0.5 ? 0.02 : 0.002;
+        for (const [id, p] of pos) {
+          const d = delta.get(id), n = count.get(id) || 1, o = orig.get(id);
+          if (d) { p[0] += 0.6 * d[0] / n; p[1] += 0.6 * d[1] / n; }
+          p[0] += (o[0] - p[0]) * anchor;
+          p[1] += (o[1] - p[1]) * anchor;
+        }
+      }
+    };
+    // Some constraints can't all hold at once (e.g. loops); the worst offenders
+    // give up and become 45-degree elbows, then the rest are solved again.
+    for (let round = 0; round < 4; round++) {
+      relax(iterations);
+      let changedForce = false;
+      for (const e of edges) {
+        if (!e.force) continue;
+        const A = pos.get(e.a), B = pos.get(e.b);
+        if (octiDeviation(B[0] - A[0], B[1] - A[1]) > 0.4) { e.force = false; changedForce = true; }
+      }
+      if (!changedForce) break;
+    }
+    for (const s of doc.stations) {
+      const p = pos.get(s.id);
+      s.x = Math.round(p[0]);
+      s.y = Math.round(p[1]);
+    }
+
+    // Choose a shape for every track segment.
+    const idx2 = buildIndex(doc);
+    for (const e of edges) {
+      const [P, Q] = [idx2.stations.get(e.a), idx2.stations.get(e.b)]; // e.a < e.b
+      const dev = octiDeviation(Q.x - P.x, Q.y - P.y);
+      let shape;
+      if (dev <= OCTI_TOLERANCE) shape = 'straight';
+      else if (e.bend) {
+        // keep the bend on the same side the original track curved
+        const m1 = elbowPoint(P, Q, false), m2 = elbowPoint(P, Q, true);
+        const d1 = Math.hypot(m1[0] - e.bend[0], m1[1] - e.bend[1]);
+        const d2 = Math.hypot(m2[0] - e.bend[0], m2[1] - e.bend[1]);
+        shape = d1 <= d2 ? 'elbow1' : 'elbow2';
+      } else shape = bestElbow(idx2, P, Q);
+      doc.edges[e.key] = { shape };
+    }
+    for (const k of Object.keys(doc.edges)) if (!idx2.edgeLines.has(k)) delete doc.edges[k];
+    avoidStations(doc, idx2, edges);
+    if (opts.river !== false && doc.river && doc.river.points.length > 1) doc.river.points = octilinearPolyline(doc.river.points);
+    return doc;
+  }
+
+  /**
+   * A straightened track can end up running straight through a station it does
+   * not serve (e.g. the Elizabeth line over Oxford Circus). Flip its elbow, or
+   * step it 45 degrees to one side for the length of the run, like TfL does.
+   */
+  function avoidStations(doc, idx, edges) {
+    const all = doc.stations.map(s => [s.x, s.y, s.id]);
+    const clearance = (doc.settings.lineWidth || 7) * 1.2;
+    const blocked = (pts, a, b) => {
+      let n = 0;
+      for (const [x, y, id] of all) {
+        if (id === a || id === b) continue;
+        for (let i = 1; i < pts.length; i++) {
+          if (distToSegment([x, y], pts[i - 1], pts[i]) < clearance) { n++; break; }
+        }
+      }
+      return n;
+    };
+    for (const e of edges) {
+      const P = idx.stations.get(e.a), Q = idx.stations.get(e.b);
+      const cur = doc.edges[e.key];
+      const pts = edgePoints(doc, idx, e.a, e.b);
+      if (!blocked(pts, e.a, e.b)) continue;
+      if (cur.shape === 'elbow1' || cur.shape === 'elbow2') {
+        const flipped = cur.shape === 'elbow1' ? 'elbow2' : 'elbow1';
+        const alt = [[P.x, P.y], elbowPoint(P, Q, flipped === 'elbow2'), [Q.x, Q.y]];
+        if (!blocked(alt, e.a, e.b)) { cur.shape = flipped; continue; }
+        continue;
+      }
+      const L = Math.hypot(Q.x - P.x, Q.y - P.y);
+      const h = Math.min(16, L / 3);
+      if (h < 6) continue;
+      const u = [(Q.x - P.x) / L, (Q.y - P.y) / L];
+      const nrm = [-u[1], u[0]];
+      let sides = [-1, 1];
+      if (e.bend) {
+        const s = Math.sign((e.bend[0] - P.x) * nrm[0] + (e.bend[1] - P.y) * nrm[1]) || -1;
+        sides = [s, -s];
+      }
+      for (const side of sides) {
+        // (u + n) is a 45-degree step whatever direction the track runs in
+        const k = h;
+        const v1 = [Math.round(P.x + (u[0] + side * nrm[0]) * k), Math.round(P.y + (u[1] + side * nrm[1]) * k)];
+        const v2 = [Math.round(Q.x + (-u[0] + side * nrm[0]) * k), Math.round(Q.y + (-u[1] + side * nrm[1]) * k)];
+        const via = [v1, v2];
+        if (!blocked([[P.x, P.y], ...via, [Q.x, Q.y]], e.a, e.b)) {
+          doc.edges[e.key] = { shape: 'auto', via };
+          break;
+        }
+      }
+    }
+  }
+
+  function distToSegment(p, a, b) {
+    const abx = b[0] - a[0], aby = b[1] - a[1];
+    const l2 = abx * abx + aby * aby;
+    const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * abx + (p[1] - a[1]) * aby) / l2)) : 0;
+    return Math.hypot(p[0] - a[0] - abx * t, p[1] - a[1] - aby * t);
+  }
+
+  /** Redraw a free-hand polyline (e.g. the river) with 0/45/90-degree segments. */
+  function octilinearPolyline(pts) {
+    const out = [pts[0].slice()];
+    for (let i = 1; i < pts.length; i++) {
+      const P = { x: out[out.length - 1][0], y: out[out.length - 1][1] }, Q = { x: pts[i][0], y: pts[i][1] };
+      if (octiDeviation(Q.x - P.x, Q.y - P.y) > OCTI_TOLERANCE) {
+        // alternate elbow orientation to follow the original wiggle
+        out.push(elbowPoint(P, Q, i % 2 === 0).map(v => Math.round(v)));
+      }
+      out.push([Math.round(Q.x), Math.round(Q.y)]);
+    }
+    // drop points that sit in the middle of a straight run
+    const clean = [out[0]];
+    for (let i = 1; i < out.length - 1; i++) {
+      const a = clean[clean.length - 1], b = out[i], c = out[i + 1];
+      const cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (len < 1 || Math.abs(cross) < 1e-6 * Math.max(1, len)) continue;
+      clean.push(b);
+    }
+    clean.push(out[out.length - 1]);
+    return clean;
   }
 
   /** Move every object on the map by (dx, dy). */
@@ -294,6 +535,7 @@
 
   window.TubeDoc = {
     translateDoc, contentBounds, fitToContent,
+    octilinearize, octiDeviation, snapToRay, OCTI_TOLERANCE,
     VERSION, TFL_PRESETS, uid, edgeKey, blankDoc, templateDoc, normalize, buildIndex, isInterchange,
     edgePoints, makeZones, defaultSettings,
   };
