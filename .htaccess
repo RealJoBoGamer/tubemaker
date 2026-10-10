@@ -1,0 +1,11 @@
+Options -Indexes
+DirectoryIndex index.html
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# PHP uploads include the PNG preview as base64, allow ~12 MB bodies
+<IfModule mod_php.c>
+  php_value post_max_size 16M
+</IfModule>

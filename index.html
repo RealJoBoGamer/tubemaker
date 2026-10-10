@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TubeMaker – London Tube Map Builder</title>
+  <meta name="description" content="Build your own London Tube map in the browser: TfL lines or custom lines, key symbols, fare zones and interchanges. Export PNG/PDF and share with the community.">
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23dc241f' stroke-width='6'/%3E%3Crect x='1' y='12.5' width='30' height='7' fill='%231c2c6b'/%3E%3C/svg%3E">
+</head>
+<body class="editor">
+<header class="topbar">
+  <a class="brand" href="index.html" title="TubeMaker">
+    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="#dc241f" stroke-width="5.5"/><rect x="1" y="12.6" width="30" height="6.8" fill="#1c2c6b"/></svg>
+    <span>TubeMaker</span>
+  </a>
+  <input id="docTitle" class="doc-title" type="text" maxlength="120" aria-label="Map title">
+  <nav class="actions">
+    <div class="menu">
+      <button class="btn">New ▾</button>
+      <div class="menu-items">
+        <button data-action="new-template">TfL template (London)</button>
+        <button data-action="new-blank">Blank map</button>
+        <hr>
+        <button data-action="open-json">Open map file (.json)…</button>
+        <button data-action="save-json">Save map file (.json)</button>
+      </div>
+    </div>
+    <button class="btn icon" data-action="undo" title="Undo (Ctrl+Z)">↶</button>
+    <button class="btn icon" data-action="redo" title="Redo (Ctrl+Y)">↷</button>
+    <div class="menu">
+      <button class="btn">Export ▾</button>
+      <div class="menu-items">
+        <button data-action="png" data-scale="1">PNG – standard</button>
+        <button data-action="png" data-scale="2">PNG – high resolution (2×)</button>
+        <button data-action="png" data-scale="4">PNG – print (4×)</button>
+        <hr>
+        <button data-action="pdf" data-paper="a4">PDF – A4</button>
+        <button data-action="pdf" data-paper="a3">PDF – A3</button>
+        <button data-action="pdf" data-paper="a2">PDF – A2</button>
+        <button data-action="pdf" data-paper="a1">PDF – A1</button>
+        <button data-action="pdf" data-paper="a0">PDF – A0 poster</button>
+        <hr>
+        <button data-action="svg">SVG (vector)</button>
+      </div>
+    </div>
+    <button class="btn primary" data-action="publish">Upload to community</button>
+    <a class="btn" href="community.html">Community</a>
+    <button class="btn icon" data-action="help" title="Help">?</button>
+  </nav>
+</header>
+
+<div class="workspace">
+  <aside class="panel left">
+    <section>
+      <h3>Tools</h3>
+      <div class="tools" id="tools">
+        <button data-tool="select" class="active" title="Select / move (V)"><span>⬚</span>Select</button>
+        <button data-tool="station" title="Add station (S)"><span>◯</span>Station</button>
+        <button data-tool="line" title="Draw line between stations (L)"><span>⟋</span>Draw line</button>
+        <button data-tool="connector" title="Interchange connector (C)"><span>⊶</span>Connector</button>
+        <button data-tool="symbol" title="Place key symbol (K)"><span>♿</span>Symbol</button>
+        <button data-tool="text" title="Add text (T)"><span>T</span>Text</button>
+        <button data-tool="erase" title="Delete (E)"><span>✕</span>Erase</button>
+        <button data-tool="pan" title="Pan (H or hold Space)"><span>✋</span>Pan</button>
+      </div>
+      <div id="toolOptions" class="tool-options"></div>
+    </section>
+    <section class="lines-section">
+      <h3>Lines <button class="btn small" data-action="add-line">+ Add line</button></h3>
+      <ul id="lineList" class="line-list"></ul>
+    </section>
+  </aside>
+
+  <main class="canvas-wrap" id="canvasWrap">
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg">
+      <g id="viewport"></g>
+    </svg>
+    <div class="zoom-controls">
+      <button data-action="zoom-in" title="Zoom in">+</button>
+      <button data-action="zoom-out" title="Zoom out">−</button>
+      <button data-action="zoom-fit" title="Fit map">⤢</button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </main>
+
+  <aside class="panel right" id="props"></aside>
+</div>
+
+<footer class="statusbar">
+  <span id="status">Ready</span>
+  <span class="spacer"></span>
+  <span id="coords"></span>
+  <span id="zoomLevel"></span>
+</footer>
+
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+<dialog id="dlgLine" class="dialog">
+  <form method="dialog">
+    <h2>Add a line</h2>
+    <div class="tabs"><button type="button" class="tab active" data-tab="tfl">TfL lines</button><button type="button" class="tab" data-tab="custom">Custom line</button><button type="button" class="tab" data-tab="community">Community presets</button></div>
+    <div class="tab-panel" data-panel="tfl"><div id="presetGrid" class="preset-grid"></div></div>
+    <div class="tab-panel hidden" data-panel="custom">
+      <label>Name <input id="newLineName" type="text" maxlength="60" value="New line"></label>
+      <label>Colour <input id="newLineColor" type="color" value="#e8590c"></label>
+      <label>Style
+        <select id="newLineStyle">
+          <option value="solid">Solid (Tube)</option>
+          <option value="double">Double / cased (Overground, DLR, Elizabeth)</option>
+          <option value="dashed">Dashed</option>
+          <option value="dotted">Dotted</option>
+          <option value="striped">Striped (weekend only)</option>
+        </select>
+      </label>
+      <label>Group in key (optional) <input id="newLineGroup" type="text" maxlength="60" placeholder="e.g. London Overground"></label>
+      <label class="check"><input id="newLineShare" type="checkbox" checked> Share this line style as a community preset</label>
+      <div class="swatch-preview" id="newLinePreview"></div>
+      <menu><button value="cancel" class="btn">Cancel</button><button type="button" class="btn primary" id="createCustomLine">Create line</button></menu>
+    </div>
+    <div class="tab-panel hidden" data-panel="community"><div id="communityPresets" class="preset-grid"><p class="muted">Loading…</p></div></div>
+    <menu class="close-row"><button value="cancel" class="btn">Close</button></menu>
+  </form>
+</dialog>
+
+<dialog id="dlgPublish" class="dialog">
+  <form method="dialog" id="publishForm">
+    <h2>Upload to the community</h2>
+    <p class="muted">Your map will appear on the public community page where others can view, like, comment and remix it.</p>
+    <img id="publishPreview" class="publish-preview" alt="Map preview">
+    <label>Title <input id="pubTitle" type="text" maxlength="120" required></label>
+    <label>Your name <input id="pubAuthor" type="text" maxlength="60" placeholder="Anonymous"></label>
+    <label>Description <textarea id="pubDesc" rows="3" maxlength="2000" placeholder="What's special about your map?"></textarea></label>
+    <label class="check" id="pubUpdateRow" hidden><input id="pubUpdate" type="checkbox" checked> Update my existing upload instead of creating a new one</label>
+    <p id="pubError" class="error"></p>
+    <menu><button value="cancel" class="btn">Cancel</button><button type="button" class="btn primary" id="pubSubmit">Upload</button></menu>
+  </form>
+</dialog>
+
+<dialog id="dlgHelp" class="dialog wide">
+  <form method="dialog">
+    <h2>How to build your map</h2>
+    <div class="help-grid">
+      <div>
+        <h4>Getting started</h4>
+        <ul>
+          <li><b>New ▸ TfL template</b> loads the London network (Tube, DLR, Elizabeth line and London Overground — Thameslink, Cable Car and Trams are left out).</li>
+          <li><b>New ▸ Blank map</b> starts from scratch.</li>
+          <li>Your work autosaves in this browser. Use <b>Save map file</b> to keep a copy.</li>
+        </ul>
+        <h4>Lines</h4>
+        <ul>
+          <li><b>+ Add line</b>: pick a TfL line, a community preset, or make a custom line with any colour and style.</li>
+          <li>Click a line in the list to make it <b>active</b>, then use <b>Draw line</b>: click stations in order (click empty space to create a new station). Press <kbd>Esc</kbd> to finish a branch.</li>
+          <li>Clicking a station that is the end of the active line continues that branch.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Editing</h4>
+        <ul>
+          <li><b>Select</b>: drag stations, labels, symbols, text, the key, zone corners and river points. Drag the background to pan, scroll to zoom.</li>
+          <li>Click a track segment to change its shape (straight / elbow / traced curve) or drag its bend points.</li>
+          <li>Station panel: rename, move label (8 positions), step-free access, National Rail, airport, river, coach and closed flags.</li>
+          <li><b>Connector</b>: click two stations to join them with an interchange “blob” (internal) or a dotted walking link.</li>
+          <li><b>Symbol</b>: stamp any key symbol anywhere on the map.</li>
+        </ul>
+        <h4>Shortcuts</h4>
+        <p><kbd>V</kbd> select · <kbd>S</kbd> station · <kbd>L</kbd> line · <kbd>C</kbd> connector · <kbd>K</kbd> symbol · <kbd>T</kbd> text · <kbd>E</kbd> erase · <kbd>Del</kbd> delete · arrows nudge · <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> undo/redo · <kbd>Ctrl+S</kbd> save file</p>
+      </div>
+    </div>
+    <p class="muted small">The template layout is traced from TfL's large print Tube map (September 2026). The Tube map design is © Transport for London — maps made from the template are for personal, non-commercial use; see tfl.gov.uk/maplicensing for commercial licensing.</p>
+    <menu><button value="cancel" class="btn primary">Got it</button></menu>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="assets/js/template-data.js"></script>
+<script src="assets/js/symbols.js"></script>
+<script src="assets/js/doc.js"></script>
+<script src="assets/js/render.js"></script>
+<script src="assets/js/export.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/editor.js"></script>
+</body>
+</html>

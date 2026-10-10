@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TubeMaker Community – Tube maps made by everyone</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23dc241f' stroke-width='6'/%3E%3Crect x='1' y='12.5' width='30' height='7' fill='%231c2c6b'/%3E%3C/svg%3E">
+</head>
+<body class="community">
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="#dc241f" stroke-width="5.5"/><rect x="1" y="12.6" width="30" height="6.8" fill="#1c2c6b"/></svg>
+    <span>TubeMaker</span>
+  </a>
+  <nav class="actions">
+    <a class="btn primary" href="index.html">Open the editor</a>
+  </nav>
+</header>
+
+<section class="community-head">
+  <div class="inner">
+    <h1>Community maps</h1>
+    <p>Tube maps designed by TubeMaker users. Like your favourites, leave a comment, or remix one in the editor.</p>
+  </div>
+</section>
+
+<main class="community-main">
+  <div class="filters">
+    <input type="search" id="q" placeholder="Search by title, author or description…" aria-label="Search maps">
+    <select id="sort" aria-label="Sort">
+      <option value="new">Newest</option>
+      <option value="popular">Most liked</option>
+      <option value="views">Most viewed</option>
+    </select>
+    <label class="check"><input type="checkbox" id="mine"> Only my uploads</label>
+  </div>
+  <div id="gallery" class="gallery"></div>
+  <div id="pager" class="pager"></div>
+</main>
+
+<dialog id="viewer" class="dialog viewer">
+  <div class="viewer-scroll">
+    <button class="close-x" id="closeViewer" aria-label="Close">×</button>
+    <img id="vImg" class="viewer-img" alt="">
+    <div class="viewer-body">
+      <div>
+        <h2 id="vTitle"></h2>
+        <div class="muted small" id="vMeta"></div>
+        <p class="desc" id="vDesc"></p>
+        <div class="actions-row">
+          <button class="btn" id="vLike">♥ Like</button>
+          <a class="btn primary" id="vRemix" href="#">Remix in editor</a>
+          <button class="btn" id="vPng">Download PNG</button>
+          <button class="btn" id="vPdf">Download PDF</button>
+          <button class="btn" id="vJson">Download map file</button>
+          <button class="btn" id="vCopy">Copy link</button>
+          <button class="btn danger" id="vDelete" hidden>Delete my upload</button>
+        </div>
+      </div>
+      <div>
+        <h4>Comments</h4>
+        <form class="comment-form" id="commentForm">
+          <input id="cAuthor" type="text" maxlength="60" placeholder="Your name (optional)">
+          <textarea id="cBody" rows="2" maxlength="1000" placeholder="Say something nice…" required></textarea>
+          <button class="btn small primary" type="submit">Post comment</button>
+        </form>
+        <div class="comments" id="comments"></div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="assets/js/symbols.js"></script>
+<script src="assets/js/doc.js"></script>
+<script src="assets/js/render.js"></script>
+<script src="assets/js/export.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/community.js"></script>
+</body>
+</html>
