@@ -79,6 +79,11 @@
     box.hidden = false;
     box.textContent = 'The planner hit an error: ' + (e.message || e) + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '');
   });
+  window.addEventListener('unhandledrejection', function (e) {
+    var box = document.getElementById('loadError');
+    box.hidden = false;
+    box.textContent = 'The planner hit an error: ' + ((e.reason && e.reason.message) || e.reason);
+  });
 </script>
 
 <script src="assets/js/template-full.js"></script>
