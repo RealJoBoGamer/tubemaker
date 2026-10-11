@@ -40,3 +40,5 @@
 @media (max-width: 760px) {
   .planner .planner-panel { width: 100%; max-height: 46vh; }
 }
+
+.load-error { position: fixed; left: 12px; right: 12px; bottom: 40px; z-index: 200; background: #b3261e; color: #fff; padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.4; }

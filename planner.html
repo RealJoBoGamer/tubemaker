@@ -71,6 +71,15 @@
 </div>
 <footer class="statusbar"><span id="status">Loading map…</span><span class="spacer"></span><span class="muted small">Journey data: TfL Unified API · Map: TfL large print Tube map</span></footer>
 <div id="toast" class="toast" hidden></div>
+<div id="loadError" class="load-error" hidden></div>
+<script>
+  // Show problems on the page instead of failing silently.
+  window.addEventListener('error', function (e) {
+    var box = document.getElementById('loadError');
+    box.hidden = false;
+    box.textContent = 'The planner hit an error: ' + (e.message || e) + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '');
+  });
+</script>
 
 <script src="assets/js/template-full.js"></script>
 <script src="assets/js/tfl-symbols.js"></script>
@@ -78,5 +87,14 @@
 <script src="assets/js/doc.js"></script>
 <script src="assets/js/render.js"></script>
 <script src="assets/js/planner.js"></script>
+<script>
+  if (!window.TUBE_TEMPLATE_FULL || !window.TubePlanner) {
+    var box = document.getElementById('loadError');
+    if (box.hidden) {
+      box.hidden = false;
+      box.textContent = 'The map script could not be loaded. Unzip everything first and keep index.html, styles.css and app.js together in the same folder, then open index.html.';
+    }
+  }
+</script>
 </body>
 </html>

@@ -110,8 +110,15 @@
     apply();
   }
   function apply() { viewport.setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); }
+  let pendingFit = null;
   function fitTo(x0, y0, x1, y1, pad = 60) {
     const r = wrap.getBoundingClientRect();
+    if (!r.width || !r.height) {
+      // map area not laid out yet (some phone browsers / embedded previews): fit when it gets a size
+      pendingFit = [x0, y0, x1, y1, pad];
+      return;
+    }
+    pendingFit = null;
     const w = x1 - x0 + pad * 2, h = y1 - y0 + pad * 2;
     view.k = Math.min(4, Math.min(r.width / w, r.height / h));
     view.x = (r.width - (x0 + x1) * view.k) / 2;
@@ -426,7 +433,8 @@
   $('#stationList').innerHTML = [...new Set(doc.stations.map(s => s.name))].sort().map(n => `<option value="${esc(n)}">`).join('');
   $('#planForm').addEventListener('submit', plan);
   $('#swap').onclick = () => { const f = $('#from').value; $('#from').value = $('#to').value; $('#to').value = f; };
-  window.addEventListener('resize', apply);
+  window.addEventListener('resize', () => (pendingFit ? fitTo(...pendingFit) : apply()));
+  if (window.ResizeObserver) new ResizeObserver(() => { if (pendingFit) fitTo(...pendingFit); }).observe(wrap);
 
   (async () => {
     try { await Promise.race([document.fonts.load("12px 'London Tube'"), new Promise(r => setTimeout(r, 2500))]); } catch (e) { /* ignore */ }
