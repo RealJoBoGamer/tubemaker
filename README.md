@@ -47,6 +47,25 @@ Station facts (NaPTAN id and fare zone) come from the official
   most viewed; search; like; comment; download; and **remix** someone else's map in the editor.
   Uploaders can update or delete their own maps: a secret edit token is kept in their browser.
 
+## Journey planner (`planner.html`)
+
+A separate tool built on the same map system. It uses the **full** TfL map, which adds Thameslink,
+London Trams and the IFS Cloud Cable Car to everything in the builder's template
+(`assets/js/template-full.js`).
+
+- **Before you search** the whole network is shown. Type two stations, pick them from the list,
+  or click two stations on the map.
+- **Journeys** come from TfL's live Journey Planner API (`/Journey/JourneyResults`), using the
+  stations' NaPTAN ids. You can choose times, fastest / fewest changes / least walking, modes and
+  step-free journeys. Untick "Live TfL journey planner" to plan on the map only. The planner
+  falls back to the map automatically when TfL can't be reached.
+- **Picking a journey** removes everything except the stations you pass through or change at,
+  the track you ride and the walks between stations. Stations an express leg runs through come
+  from the map's line graph. Tick "Faint rest of network" to keep the rest of the map faintly in
+  the background, or press "Show full map" to go back.
+- **Other rail** (e.g. South Western Railway) isn't on the TfL map, so those legs are drawn as a
+  dashed grey link between the stations.
+
 ## Install (XAMPP / WAMP / MAMP / any Apache + PHP + MySQL host)
 
 1. Copy this folder into your web root, e.g. `C:\xampp\htdocs\tubemaker` or `public_html/tubemaker`.
@@ -117,6 +136,9 @@ pdftocairo -f 1 -l 1 -svg  large-print-tube-map.pdf map.svg
 python3 tools/fetch_tfl.py tools/tfl_stations.json                 # official station data (TfL API)
 python3 tools/extract_symbols.py map.svg assets/js/tfl-symbols.js  # official key symbols
 python3 tools/build_template.py words.html map.svg assets/js/template-data.js
+# full map for the journey planner (adds Thameslink, Trams, Cable Car)
+python3 tools/fetch_extra_lines.py tools/lines_extra.json
+TUBEMAKER_FULL=1 python3 tools/build_template.py words.html map.svg assets/js/template-full.js
 ```
 
 How `build_template.py` works:

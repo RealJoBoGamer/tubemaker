@@ -1,0 +1,1541 @@
+{
+ "thameslink": {
+  "name": "Thameslink",
+  "color": "#D66FAA",
+  "style": "thameslink",
+  "group": "",
+  "branches": [
+   [
+    "Bedford",
+    "Flitwick",
+    "Harlington",
+    "Leagrave",
+    "Luton",
+    "Luton Airport Parkway",
+    "Harpenden",
+    "St Albans City",
+    "Radlett",
+    "Elstree & Borehamwood",
+    "Mill Hill Broadway",
+    "Hendon",
+    "Brent Cross West",
+    "Cricklewood",
+    "West Hampstead Thameslink",
+    "Kentish Town",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "Elephant & Castle",
+    "Loughborough Junction",
+    "Herne Hill",
+    "Tulse Hill",
+    "Streatham",
+    "Tooting",
+    "Haydons Road",
+    "Wimbledon",
+    "Wimbledon Chase",
+    "South Merton",
+    "Morden South",
+    "St Helier",
+    "Sutton Common",
+    "West Sutton",
+    "Sutton"
+   ],
+   [
+    "Bedford",
+    "Flitwick",
+    "Harlington",
+    "Leagrave",
+    "Luton",
+    "Luton Airport Parkway",
+    "Harpenden",
+    "St Albans City",
+    "Radlett",
+    "Elstree & Borehamwood",
+    "Mill Hill Broadway",
+    "Hendon",
+    "Brent Cross West",
+    "Cricklewood",
+    "West Hampstead Thameslink",
+    "Kentish Town",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "London Bridge",
+    "Deptford",
+    "Greenwich",
+    "Maze Hill",
+    "Westcombe Park",
+    "Charlton",
+    "Woolwich Arsenal",
+    "Plumstead",
+    "Abbey Wood",
+    "Slade Green",
+    "Dartford",
+    "Stone Crossing",
+    "Greenhithe for Bluewater",
+    "Swanscombe",
+    "Northfleet",
+    "Gravesend",
+    "Higham",
+    "Strood",
+    "Rochester",
+    "Chatham",
+    "Gillingham",
+    "Rainham"
+   ],
+   [
+    "Bedford",
+    "Flitwick",
+    "Harlington",
+    "Leagrave",
+    "Luton",
+    "Luton Airport Parkway",
+    "Harpenden",
+    "St Albans City",
+    "Radlett",
+    "Elstree & Borehamwood",
+    "Mill Hill Broadway",
+    "Hendon",
+    "Brent Cross West",
+    "Cricklewood",
+    "West Hampstead Thameslink",
+    "Kentish Town",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "London Bridge",
+    "Norwood Junction",
+    "East Croydon",
+    "South Croydon",
+    "Purley",
+    "Coulsdon South",
+    "Merstham",
+    "Redhill",
+    "Earlswood",
+    "Salfords",
+    "Horley",
+    "Gatwick Airport",
+    "Three Bridges",
+    "Balcombe",
+    "Haywards Heath",
+    "Wivelsfield",
+    "Burgess Hill",
+    "Hassocks",
+    "Preston Park",
+    "Brighton"
+   ],
+   [
+    "Bedford",
+    "Flitwick",
+    "Harlington",
+    "Leagrave",
+    "Luton",
+    "Luton Airport Parkway",
+    "Harpenden",
+    "St Albans City",
+    "Radlett",
+    "Elstree & Borehamwood",
+    "Mill Hill Broadway",
+    "Hendon",
+    "Brent Cross West",
+    "Cricklewood",
+    "West Hampstead Thameslink",
+    "Kentish Town",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "London Bridge",
+    "Norwood Junction",
+    "East Croydon",
+    "South Croydon",
+    "Purley",
+    "Coulsdon South",
+    "Merstham",
+    "Redhill",
+    "Earlswood",
+    "Salfords",
+    "Horley",
+    "Gatwick Airport",
+    "Three Bridges",
+    "Crawley",
+    "Ifield",
+    "Faygate",
+    "Littlehaven",
+    "Horsham"
+   ],
+   [
+    "Bedford",
+    "Flitwick",
+    "Harlington",
+    "Leagrave",
+    "Luton",
+    "Luton Airport Parkway",
+    "Harpenden",
+    "St Albans City",
+    "Radlett",
+    "Elstree & Borehamwood",
+    "Mill Hill Broadway",
+    "Hendon",
+    "Brent Cross West",
+    "Cricklewood",
+    "West Hampstead Thameslink",
+    "Kentish Town",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "London Bridge",
+    "Norwood Junction",
+    "East Croydon",
+    "South Croydon",
+    "Sanderstead",
+    "Riddlesdown",
+    "Upper Warlingham",
+    "Woldingham",
+    "Oxted",
+    "Hurst Green",
+    "Lingfield",
+    "Dormans",
+    "East Grinstead"
+   ],
+   [
+    "Brighton",
+    "Preston Park",
+    "Hassocks",
+    "Burgess Hill",
+    "Wivelsfield",
+    "Haywards Heath",
+    "Balcombe",
+    "Three Bridges",
+    "Gatwick Airport",
+    "Horley",
+    "Salfords",
+    "Earlswood",
+    "Redhill",
+    "Merstham",
+    "Coulsdon South",
+    "Purley",
+    "South Croydon",
+    "East Croydon",
+    "Norwood Junction",
+    "London Bridge",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Finsbury Park",
+    "Harringay",
+    "Alexandra Palace",
+    "New Southgate",
+    "Oakleigh Park",
+    "New Barnet",
+    "Hadley Wood",
+    "Potters Bar",
+    "Hatfield",
+    "Welwyn Garden City",
+    "Welwyn North",
+    "Knebworth",
+    "Stevenage",
+    "Hitchin",
+    "Letchworth Garden City",
+    "Baldock",
+    "Ashwell & Morden",
+    "Royston",
+    "Meldreth",
+    "Shepreth",
+    "Foxton",
+    "Cambridge"
+   ],
+   [
+    "Brighton",
+    "Preston Park",
+    "Hassocks",
+    "Burgess Hill",
+    "Wivelsfield",
+    "Haywards Heath",
+    "Balcombe",
+    "Three Bridges",
+    "Gatwick Airport",
+    "Horley",
+    "Salfords",
+    "Earlswood",
+    "Redhill",
+    "Merstham",
+    "Coulsdon South",
+    "Purley",
+    "South Croydon",
+    "East Croydon",
+    "Norwood Junction",
+    "London Bridge",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton",
+    "Leagrave",
+    "Harlington",
+    "Flitwick",
+    "Bedford"
+   ],
+   [
+    "Cambridge",
+    "Foxton",
+    "Shepreth",
+    "Meldreth",
+    "Royston",
+    "Ashwell & Morden",
+    "Baldock",
+    "Letchworth Garden City",
+    "Hitchin",
+    "Stevenage",
+    "Knebworth",
+    "Welwyn North",
+    "Welwyn Garden City",
+    "Hatfield",
+    "Potters Bar",
+    "Hadley Wood",
+    "New Barnet",
+    "Oakleigh Park",
+    "New Southgate",
+    "Alexandra Palace",
+    "Harringay",
+    "Finsbury Park",
+    "King's Cross St. Pancras"
+   ],
+   [
+    "Cambridge",
+    "Foxton",
+    "Shepreth",
+    "Meldreth",
+    "Royston",
+    "Ashwell & Morden",
+    "Baldock",
+    "Letchworth Garden City",
+    "Hitchin",
+    "Stevenage",
+    "Knebworth",
+    "Welwyn North",
+    "Welwyn Garden City",
+    "Hatfield",
+    "Potters Bar",
+    "Hadley Wood",
+    "New Barnet",
+    "Oakleigh Park",
+    "New Southgate",
+    "Alexandra Palace",
+    "Harringay",
+    "Finsbury Park",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "London Bridge",
+    "Norwood Junction",
+    "East Croydon",
+    "South Croydon",
+    "Purley",
+    "Earlswood",
+    "Salfords",
+    "Horley",
+    "Gatwick Airport",
+    "Three Bridges",
+    "Balcombe",
+    "Haywards Heath",
+    "Wivelsfield",
+    "Burgess Hill",
+    "Hassocks",
+    "Preston Park",
+    "Brighton"
+   ],
+   [
+    "East Grinstead",
+    "Dormans",
+    "Lingfield",
+    "Hurst Green",
+    "Oxted",
+    "Woldingham",
+    "Upper Warlingham",
+    "Riddlesdown",
+    "Sanderstead",
+    "South Croydon",
+    "East Croydon",
+    "Norwood Junction",
+    "London Bridge",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton",
+    "Leagrave",
+    "Harlington",
+    "Flitwick",
+    "Bedford"
+   ],
+   [
+    "Horsham",
+    "Littlehaven",
+    "Faygate",
+    "Ifield",
+    "Crawley",
+    "Three Bridges",
+    "Gatwick Airport",
+    "Horley",
+    "Salfords",
+    "Earlswood",
+    "Redhill",
+    "Merstham",
+    "Coulsdon South",
+    "Purley",
+    "South Croydon",
+    "East Croydon",
+    "Norwood Junction",
+    "London Bridge",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Finsbury Park",
+    "Harringay",
+    "Alexandra Palace",
+    "New Southgate",
+    "Oakleigh Park",
+    "New Barnet",
+    "Hadley Wood",
+    "Potters Bar",
+    "Hatfield",
+    "Welwyn Garden City",
+    "Welwyn North",
+    "Knebworth",
+    "Stevenage",
+    "Hitchin",
+    "Arlesey",
+    "Biggleswade",
+    "Sandy",
+    "St Neots",
+    "Huntingdon",
+    "Peterborough"
+   ],
+   [
+    "Horsham",
+    "Littlehaven",
+    "Faygate",
+    "Ifield",
+    "Crawley",
+    "Three Bridges",
+    "Gatwick Airport",
+    "Horley",
+    "Salfords",
+    "Earlswood",
+    "Redhill",
+    "Merstham",
+    "Coulsdon South",
+    "Purley",
+    "South Croydon",
+    "East Croydon",
+    "Norwood Junction",
+    "London Bridge",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton",
+    "Leagrave",
+    "Harlington",
+    "Flitwick",
+    "Bedford"
+   ],
+   [
+    "London Bridge",
+    "Peckham Rye",
+    "Tulse Hill",
+    "Streatham",
+    "Mitcham Eastfields",
+    "Mitcham Junction",
+    "Hackbridge",
+    "Carshalton",
+    "Sutton"
+   ],
+   [
+    "King's Cross St. Pancras",
+    "Finsbury Park",
+    "Harringay",
+    "Alexandra Palace",
+    "New Southgate",
+    "Oakleigh Park",
+    "New Barnet",
+    "Hadley Wood",
+    "Potters Bar",
+    "Hatfield",
+    "Welwyn Garden City",
+    "Welwyn North",
+    "Knebworth",
+    "Stevenage",
+    "Hitchin",
+    "Arlesey",
+    "Biggleswade",
+    "Sandy",
+    "St Neots",
+    "Huntingdon",
+    "Peterborough"
+   ],
+   [
+    "King's Cross St. Pancras",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton",
+    "Leagrave",
+    "Harlington",
+    "Flitwick",
+    "Bedford"
+   ],
+   [
+    "Victoria",
+    "Denmark Hill",
+    "Peckham Rye",
+    "Nunhead",
+    "Crofton Park",
+    "Catford",
+    "Bellingham",
+    "Beckenham Hill",
+    "Ravensbourne",
+    "Shortlands",
+    "Bromley South",
+    "Bickley",
+    "St Mary Cray",
+    "Swanley",
+    "Eynsford",
+    "Shoreham",
+    "Otford",
+    "Bat & Ball",
+    "Sevenoaks"
+   ],
+   [
+    "Luton",
+    "Luton Airport Parkway",
+    "Harpenden",
+    "St Albans City",
+    "Radlett",
+    "Elstree & Borehamwood",
+    "Mill Hill Broadway",
+    "Hendon",
+    "Brent Cross West",
+    "Cricklewood",
+    "West Hampstead Thameslink",
+    "Kentish Town",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "Elephant & Castle",
+    "Denmark Hill",
+    "Peckham Rye",
+    "Nunhead",
+    "Crofton Park",
+    "Catford",
+    "Bellingham",
+    "Beckenham Hill",
+    "Ravensbourne",
+    "Shortlands",
+    "Bromley South",
+    "Bickley",
+    "Petts Wood",
+    "Orpington",
+    "Sevenoaks"
+   ],
+   [
+    "Peterborough",
+    "Huntingdon",
+    "St Neots",
+    "Sandy",
+    "Biggleswade",
+    "Arlesey",
+    "Hitchin",
+    "Stevenage",
+    "Knebworth",
+    "Welwyn North",
+    "Welwyn Garden City",
+    "Hatfield",
+    "Potters Bar",
+    "Hadley Wood",
+    "New Barnet",
+    "Oakleigh Park",
+    "New Southgate",
+    "Alexandra Palace",
+    "Harringay",
+    "Finsbury Park",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "London Bridge",
+    "Norwood Junction",
+    "East Croydon",
+    "South Croydon",
+    "Purley",
+    "Coulsdon South",
+    "Merstham",
+    "Redhill",
+    "Earlswood",
+    "Salfords",
+    "Horley",
+    "Gatwick Airport",
+    "Three Bridges",
+    "Crawley",
+    "Ifield",
+    "Faygate",
+    "Littlehaven",
+    "Horsham",
+    "Balcombe"
+   ],
+   [
+    "Rainham",
+    "Gillingham",
+    "Chatham",
+    "Rochester",
+    "Strood",
+    "Higham",
+    "Gravesend",
+    "Northfleet",
+    "Swanscombe",
+    "Greenhithe for Bluewater",
+    "Stone Crossing",
+    "Dartford",
+    "Slade Green",
+    "Abbey Wood",
+    "Plumstead",
+    "Woolwich Arsenal",
+    "Charlton",
+    "Westcombe Park",
+    "Maze Hill",
+    "Greenwich",
+    "Deptford",
+    "London Bridge",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton",
+    "Leagrave",
+    "Harlington",
+    "Flitwick",
+    "Bedford"
+   ],
+   [
+    "Sevenoaks",
+    "Bat & Ball",
+    "Otford",
+    "Shoreham",
+    "Eynsford",
+    "Swanley",
+    "St Mary Cray",
+    "Bickley",
+    "Bromley South",
+    "Shortlands",
+    "Ravensbourne",
+    "Beckenham Hill",
+    "Bellingham",
+    "Catford",
+    "Crofton Park",
+    "Nunhead",
+    "Peckham Rye",
+    "Denmark Hill",
+    "Elephant & Castle",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Finsbury Park",
+    "New Southgate",
+    "Oakleigh Park",
+    "New Barnet",
+    "Potters Bar",
+    "Hatfield",
+    "Welwyn Garden City"
+   ],
+   [
+    "Sevenoaks",
+    "Orpington",
+    "Petts Wood",
+    "Bickley",
+    "Bromley South",
+    "Shortlands",
+    "Ravensbourne",
+    "Beckenham Hill",
+    "Bellingham",
+    "Catford",
+    "Crofton Park",
+    "Nunhead",
+    "Peckham Rye",
+    "Denmark Hill",
+    "Elephant & Castle",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton"
+   ],
+   [
+    "Sutton",
+    "West Sutton",
+    "Sutton Common",
+    "St Helier",
+    "Morden South",
+    "South Merton",
+    "Wimbledon Chase",
+    "Wimbledon",
+    "Haydons Road",
+    "Tooting",
+    "Streatham",
+    "Tulse Hill",
+    "Herne Hill",
+    "Loughborough Junction",
+    "Elephant & Castle",
+    "Blackfriars",
+    "City Thameslink",
+    "Farringdon",
+    "London St Pancras International LL",
+    "Kentish Town",
+    "West Hampstead Thameslink",
+    "Cricklewood",
+    "Brent Cross West",
+    "Hendon",
+    "Mill Hill Broadway",
+    "Elstree & Borehamwood",
+    "Radlett",
+    "St Albans City",
+    "Harpenden",
+    "Luton Airport Parkway",
+    "Luton",
+    "Leagrave",
+    "Harlington",
+    "Flitwick",
+    "Bedford"
+   ],
+   [
+    "Welwyn Garden City",
+    "Hatfield",
+    "Potters Bar",
+    "New Barnet",
+    "Oakleigh Park",
+    "New Southgate",
+    "Finsbury Park",
+    "King's Cross St. Pancras",
+    "Farringdon",
+    "City Thameslink",
+    "Blackfriars",
+    "Elephant & Castle",
+    "Denmark Hill",
+    "Peckham Rye",
+    "Nunhead",
+    "Crofton Park",
+    "Catford",
+    "Bellingham",
+    "Beckenham Hill",
+    "Ravensbourne",
+    "Shortlands",
+    "Bromley South",
+    "Bickley",
+    "St Mary Cray",
+    "Swanley",
+    "Eynsford",
+    "Shoreham",
+    "Otford",
+    "Bat & Ball",
+    "Sevenoaks"
+   ]
+  ],
+  "naptans": {
+   "Bedford": [
+    "910GBEDFDM"
+   ],
+   "Flitwick": [
+    "910GFLITWCK"
+   ],
+   "Harlington": [
+    "910GHRLG"
+   ],
+   "Leagrave": [
+    "910GLEAGRVE"
+   ],
+   "Luton": [
+    "910GLUTON"
+   ],
+   "Luton Airport Parkway": [
+    "910GLUTOAPY"
+   ],
+   "Harpenden": [
+    "910GHRPNDN"
+   ],
+   "St Albans City": [
+    "910GSTALBCY"
+   ],
+   "Radlett": [
+    "910GRADLETT"
+   ],
+   "Elstree & Borehamwood": [
+    "910GELTR"
+   ],
+   "Mill Hill Broadway": [
+    "910GMLHB"
+   ],
+   "Hendon": [
+    "910GHDON"
+   ],
+   "Brent Cross West": [
+    "910GBRENTX"
+   ],
+   "Cricklewood": [
+    "910GCRKLWD"
+   ],
+   "West Hampstead Thameslink": [
+    "910GWHMPSTM"
+   ],
+   "Kentish Town": [
+    "910GKNTSHTN"
+   ],
+   "King's Cross St. Pancras": [
+    "910GSTPX",
+    "910GKNGX"
+   ],
+   "Farringdon": [
+    "910GFRNDNLT"
+   ],
+   "City Thameslink": [
+    "910GCTMSLNK"
+   ],
+   "Blackfriars": [
+    "910GBLFR"
+   ],
+   "Elephant & Castle": [
+    "910GELPHNAC"
+   ],
+   "Loughborough Junction": [
+    "910GLBGHJN"
+   ],
+   "Herne Hill": [
+    "910GHERNEH"
+   ],
+   "Tulse Hill": [
+    "910GTULSEH"
+   ],
+   "Streatham": [
+    "910GSTRETHM"
+   ],
+   "Tooting": [
+    "910GTOOTING"
+   ],
+   "Haydons Road": [
+    "910GHYDNSRD"
+   ],
+   "Wimbledon": [
+    "910GWIMBLDN"
+   ],
+   "Wimbledon Chase": [
+    "910GWIMLCHS"
+   ],
+   "South Merton": [
+    "910GSMERTON"
+   ],
+   "Morden South": [
+    "910GMORDENS"
+   ],
+   "St Helier": [
+    "910GSHLIER"
+   ],
+   "Sutton Common": [
+    "910GSUTTONC"
+   ],
+   "West Sutton": [
+    "910GWSUTTON"
+   ],
+   "Sutton": [
+    "910GSUTTON"
+   ],
+   "London Bridge": [
+    "910GLNDNBDC"
+   ],
+   "Deptford": [
+    "910GDEPTFD"
+   ],
+   "Greenwich": [
+    "910GGNWH"
+   ],
+   "Maze Hill": [
+    "910GMAZEH"
+   ],
+   "Westcombe Park": [
+    "910GWCOMBEP"
+   ],
+   "Charlton": [
+    "910GCRLN"
+   ],
+   "Woolwich Arsenal": [
+    "910GWOLWCHA"
+   ],
+   "Plumstead": [
+    "910GPLMS"
+   ],
+   "Abbey Wood": [
+    "910GABWD"
+   ],
+   "Slade Green": [
+    "910GSLADEGN"
+   ],
+   "Dartford": [
+    "910GDARTFD"
+   ],
+   "Stone Crossing": [
+    "910GSTCR"
+   ],
+   "Greenhithe for Bluewater": [
+    "910GGNHT"
+   ],
+   "Swanscombe": [
+    "910GSWNSCMB"
+   ],
+   "Northfleet": [
+    "910GNRTHFLT"
+   ],
+   "Gravesend": [
+    "910GGRVSEND"
+   ],
+   "Higham": [
+    "910GHIGM"
+   ],
+   "Strood": [
+    "910GSTROOD"
+   ],
+   "Rochester": [
+    "910GRCHT"
+   ],
+   "Chatham": [
+    "910GCHATHAM"
+   ],
+   "Gillingham": [
+    "910GGLNGHMK"
+   ],
+   "Rainham": [
+    "910GRAINHMK"
+   ],
+   "Norwood Junction": [
+    "910GNORWDJ"
+   ],
+   "East Croydon": [
+    "910GECROYDN"
+   ],
+   "South Croydon": [
+    "910GSCROYDN"
+   ],
+   "Purley": [
+    "910GPURLEY"
+   ],
+   "Coulsdon South": [
+    "910GCOLSDNS"
+   ],
+   "Merstham": [
+    "910GMERSTHM"
+   ],
+   "Redhill": [
+    "910GREDHILL"
+   ],
+   "Earlswood": [
+    "910GEARLSWD"
+   ],
+   "Salfords": [
+    "910GSALFDS"
+   ],
+   "Horley": [
+    "910GHORLEY"
+   ],
+   "Gatwick Airport": [
+    "910GGTWK"
+   ],
+   "Three Bridges": [
+    "910GTHBDGS"
+   ],
+   "Balcombe": [
+    "910GBALCOMB"
+   ],
+   "Haywards Heath": [
+    "910GHYWRDSH"
+   ],
+   "Wivelsfield": [
+    "910GWVLSFLD"
+   ],
+   "Burgess Hill": [
+    "910GBURGESH"
+   ],
+   "Hassocks": [
+    "910GHASOCKS"
+   ],
+   "Preston Park": [
+    "910GPRSP"
+   ],
+   "Brighton": [
+    "910GBRGHTN"
+   ],
+   "Crawley": [
+    "910GCRAWLEY"
+   ],
+   "Ifield": [
+    "910GIFIELD"
+   ],
+   "Faygate": [
+    "910GFAYGATE"
+   ],
+   "Littlehaven": [
+    "910GLHVN"
+   ],
+   "Horsham": [
+    "910GHORSHAM"
+   ],
+   "Sanderstead": [
+    "910GSDSD"
+   ],
+   "Riddlesdown": [
+    "910GRDLSDWN"
+   ],
+   "Upper Warlingham": [
+    "910GUWRLNGH"
+   ],
+   "Woldingham": [
+    "910GWLDNGHM"
+   ],
+   "Oxted": [
+    "910GOXTED"
+   ],
+   "Hurst Green": [
+    "910GHRSTGRN"
+   ],
+   "Lingfield": [
+    "910GLINGFLD"
+   ],
+   "Dormans": [
+    "910GDORMANS"
+   ],
+   "East Grinstead": [
+    "910GEGRNSTD"
+   ],
+   "London St Pancras International LL": [
+    "910GSTPXBOX"
+   ],
+   "Finsbury Park": [
+    "910GFNPK"
+   ],
+   "Harringay": [
+    "910GHRGY"
+   ],
+   "Alexandra Palace": [
+    "910GALEXNDP"
+   ],
+   "New Southgate": [
+    "910GNEWSGAT"
+   ],
+   "Oakleigh Park": [
+    "910GOKLGHPK"
+   ],
+   "New Barnet": [
+    "910GNBARNET"
+   ],
+   "Hadley Wood": [
+    "910GHADLYWD"
+   ],
+   "Potters Bar": [
+    "910GPOTRSBR"
+   ],
+   "Hatfield": [
+    "910GHATFILD"
+   ],
+   "Welwyn Garden City": [
+    "910GWLWYNGC"
+   ],
+   "Welwyn North": [
+    "910GWLWYNN"
+   ],
+   "Knebworth": [
+    "910GKNEBWTH"
+   ],
+   "Stevenage": [
+    "910GSTEVNGE"
+   ],
+   "Hitchin": [
+    "910GHITCHIN"
+   ],
+   "Letchworth Garden City": [
+    "910GLTCE"
+   ],
+   "Baldock": [
+    "910GBALDOCK"
+   ],
+   "Ashwell & Morden": [
+    "910GASHWELC"
+   ],
+   "Royston": [
+    "910GROYSTON"
+   ],
+   "Meldreth": [
+    "910GMELDRTH"
+   ],
+   "Shepreth": [
+    "910GSHPRTH"
+   ],
+   "Foxton": [
+    "910GFOXTON"
+   ],
+   "Cambridge": [
+    "910GCAMBDGE"
+   ],
+   "Arlesey": [
+    "910GARLSEY"
+   ],
+   "Biggleswade": [
+    "910GBIGLSWD"
+   ],
+   "Sandy": [
+    "910GSNDY"
+   ],
+   "St Neots": [
+    "910GSTNEOTS"
+   ],
+   "Huntingdon": [
+    "910GHNTNGDN"
+   ],
+   "Peterborough": [
+    "910GPBRO"
+   ],
+   "Peckham Rye": [
+    "910GPCKHMRY"
+   ],
+   "Mitcham Eastfields": [
+    "910GESTFLDS"
+   ],
+   "Mitcham Junction": [
+    "910GMITCHMJ"
+   ],
+   "Hackbridge": [
+    "910GHKBG"
+   ],
+   "Carshalton": [
+    "910GCRSHLTN"
+   ],
+   "Victoria": [
+    "910GVICTRIC"
+   ],
+   "Denmark Hill": [
+    "910GDENMRKH"
+   ],
+   "Nunhead": [
+    "910GNUNHEAD"
+   ],
+   "Crofton Park": [
+    "910GCFPK"
+   ],
+   "Catford": [
+    "910GCATFORD"
+   ],
+   "Bellingham": [
+    "910GBELNGHM"
+   ],
+   "Beckenham Hill": [
+    "910GBCKNHMH"
+   ],
+   "Ravensbourne": [
+    "910GRBRN"
+   ],
+   "Shortlands": [
+    "910GSHRTLND"
+   ],
+   "Bromley South": [
+    "910GBROMLYS"
+   ],
+   "Bickley": [
+    "910GBICKLEY"
+   ],
+   "St Mary Cray": [
+    "910GSTMRYC"
+   ],
+   "Swanley": [
+    "910GSWLY"
+   ],
+   "Eynsford": [
+    "910GEYNSFD"
+   ],
+   "Shoreham": [
+    "910GSHRMKT"
+   ],
+   "Otford": [
+    "910GOTFORD"
+   ],
+   "Bat & Ball": [
+    "910GBATABAL"
+   ],
+   "Sevenoaks": [
+    "910GSVNOAKS"
+   ],
+   "Petts Wood": [
+    "910GPETSWD"
+   ],
+   "Orpington": [
+    "910GORPNGTN"
+   ]
+  }
+ },
+ "tram": {
+  "name": "London Trams",
+  "color": "#6EC72E",
+  "style": "double",
+  "group": "",
+  "branches": [
+   [
+    "Beckenham Junction",
+    "Beckenham Road",
+    "Avenue Road",
+    "Birkbeck",
+    "Harrington Road",
+    "Arena",
+    "Woodside",
+    "Blackhorse Lane",
+    "Addiscombe",
+    "Sandilands",
+    "Lebanon Road",
+    "East Croydon",
+    "George Street",
+    "Church Street",
+    "Wandle Park",
+    "Waddon Marsh",
+    "Ampere Way",
+    "Therapia Lane",
+    "Beddington Lane",
+    "Mitcham Junction",
+    "Mitcham",
+    "Belgrave Walk",
+    "Phipps Bridge",
+    "Morden Road",
+    "Merton Park",
+    "Dundonald Road",
+    "Wimbledon"
+   ],
+   [
+    "Church Street",
+    "Centrale",
+    "West Croydon",
+    "Wellesley Road",
+    "East Croydon",
+    "Lebanon Road",
+    "Sandilands",
+    "Lloyd Park",
+    "Coombe Lane",
+    "Gravel Hill",
+    "Addington Village",
+    "Fieldway",
+    "King Henry's Drive",
+    "New Addington"
+   ],
+   [
+    "Elmers End",
+    "Arena",
+    "Woodside",
+    "Blackhorse Lane",
+    "Addiscombe",
+    "Sandilands",
+    "Lebanon Road",
+    "East Croydon",
+    "George Street",
+    "Church Street",
+    "Wandle Park",
+    "Waddon Marsh",
+    "Ampere Way",
+    "Therapia Lane",
+    "Beddington Lane",
+    "Mitcham Junction",
+    "Mitcham",
+    "Belgrave Walk",
+    "Phipps Bridge",
+    "Morden Road",
+    "Merton Park",
+    "Dundonald Road",
+    "Wimbledon"
+   ],
+   [
+    "New Addington",
+    "King Henry's Drive",
+    "Fieldway",
+    "Addington Village",
+    "Gravel Hill",
+    "Coombe Lane",
+    "Lloyd Park",
+    "Sandilands",
+    "Lebanon Road",
+    "East Croydon",
+    "George Street",
+    "Church Street"
+   ],
+   [
+    "Wimbledon",
+    "Dundonald Road",
+    "Merton Park",
+    "Morden Road",
+    "Phipps Bridge",
+    "Belgrave Walk",
+    "Mitcham",
+    "Mitcham Junction",
+    "Beddington Lane",
+    "Therapia Lane",
+    "Ampere Way",
+    "Waddon Marsh",
+    "Wandle Park",
+    "Reeves Corner",
+    "Centrale",
+    "West Croydon",
+    "Wellesley Road",
+    "East Croydon",
+    "Lebanon Road",
+    "Sandilands",
+    "Addiscombe",
+    "Blackhorse Lane",
+    "Woodside",
+    "Arena",
+    "Elmers End"
+   ],
+   [
+    "Wimbledon",
+    "Dundonald Road",
+    "Merton Park",
+    "Morden Road",
+    "Phipps Bridge",
+    "Belgrave Walk",
+    "Mitcham",
+    "Mitcham Junction",
+    "Beddington Lane",
+    "Therapia Lane",
+    "Ampere Way",
+    "Waddon Marsh",
+    "Wandle Park",
+    "Reeves Corner",
+    "Centrale",
+    "West Croydon",
+    "Wellesley Road",
+    "East Croydon",
+    "Lebanon Road",
+    "Sandilands",
+    "Addiscombe",
+    "Blackhorse Lane",
+    "Woodside",
+    "Arena",
+    "Harrington Road",
+    "Birkbeck",
+    "Avenue Road",
+    "Beckenham Road",
+    "Beckenham Junction"
+   ]
+  ],
+  "naptans": {
+   "Beckenham Junction": [
+    "940GZZCRBEK"
+   ],
+   "Beckenham Road": [
+    "940GZZCRBRD"
+   ],
+   "Avenue Road": [
+    "940GZZCRAVE"
+   ],
+   "Birkbeck": [
+    "940GZZCRBIR"
+   ],
+   "Harrington Road": [
+    "940GZZCRHAR"
+   ],
+   "Arena": [
+    "940GZZCRARA"
+   ],
+   "Woodside": [
+    "940GZZCRWOD"
+   ],
+   "Blackhorse Lane": [
+    "940GZZCRBLA"
+   ],
+   "Addiscombe": [
+    "940GZZCRADD"
+   ],
+   "Sandilands": [
+    "940GZZCRSAN"
+   ],
+   "Lebanon Road": [
+    "940GZZCRLEB"
+   ],
+   "East Croydon": [
+    "940GZZCRECR"
+   ],
+   "George Street": [
+    "940GZZCRCEN"
+   ],
+   "Church Street": [
+    "940GZZCRCHR"
+   ],
+   "Wandle Park": [
+    "940GZZCRWAN"
+   ],
+   "Waddon Marsh": [
+    "940GZZCRWAD"
+   ],
+   "Ampere Way": [
+    "940GZZCRAMP"
+   ],
+   "Therapia Lane": [
+    "940GZZCRTPA"
+   ],
+   "Beddington Lane": [
+    "940GZZCRBED"
+   ],
+   "Mitcham Junction": [
+    "940GZZCRMJT"
+   ],
+   "Mitcham": [
+    "940GZZCRMCH"
+   ],
+   "Belgrave Walk": [
+    "940GZZCRBGV"
+   ],
+   "Phipps Bridge": [
+    "940GZZCRPHI"
+   ],
+   "Morden Road": [
+    "940GZZCRMDN"
+   ],
+   "Merton Park": [
+    "940GZZCRMTP"
+   ],
+   "Dundonald Road": [
+    "940GZZCRDDR"
+   ],
+   "Wimbledon": [
+    "940GZZCRWMB"
+   ],
+   "Centrale": [
+    "940GZZCRCTR"
+   ],
+   "West Croydon": [
+    "940GZZCRWCR"
+   ],
+   "Wellesley Road": [
+    "940GZZCRWEL"
+   ],
+   "Lloyd Park": [
+    "940GZZCRLOY"
+   ],
+   "Coombe Lane": [
+    "940GZZCRCOO"
+   ],
+   "Gravel Hill": [
+    "940GZZCRGRA"
+   ],
+   "Addington Village": [
+    "940GZZCRADV"
+   ],
+   "Fieldway": [
+    "940GZZCRFLD"
+   ],
+   "King Henry's Drive": [
+    "940GZZCRKGH"
+   ],
+   "New Addington": [
+    "940GZZCRNWA"
+   ],
+   "Elmers End": [
+    "940GZZCRELM"
+   ],
+   "Reeves Corner": [
+    "940GZZCRRVC"
+   ]
+  }
+ },
+ "london-cable-car": {
+  "name": "IFS Cloud Cable Car",
+  "color": "#E51636",
+  "style": "cable",
+  "group": "",
+  "branches": [
+   [
+    "Greenwich Peninsula",
+    "Royal Docks"
+   ]
+  ],
+  "naptans": {
+   "Greenwich Peninsula": [
+    "940GZZALGWP"
+   ],
+   "Royal Docks": [
+    "940GZZALRDK"
+   ]
+  }
+ }
+}

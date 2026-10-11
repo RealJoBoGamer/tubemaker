@@ -68,7 +68,7 @@ def main(out_path):
                 rec['zone'] = zone
         print(lid, len(stops), 'stops', file=sys.stderr)
     # match TfL stop points to our station ids, line by line
-    matches, report = {}, []
+    matches, report, all_ids = {}, [], {}
     for lid, l in LINES.items():
         ours = {s for br in l['branches'] for s in br}
         theirs = {norm(stations[n]['name']): n for n in per_line[lid]}
@@ -81,6 +81,9 @@ def main(out_path):
                 n = theirs[cands[0]] if len(cands) == 1 else None
             if n:
                 found.add(n)
+                all_ids.setdefault(s, [])
+                if n not in all_ids[s]:
+                    all_ids[s].append(n)
                 # prefer the Tube station record (940G...) when a station has several
                 if s not in matches or (n.startswith('940G') and not matches[s].startswith('940G')):
                     matches[s] = n
@@ -89,7 +92,7 @@ def main(out_path):
         for k, n in theirs.items():
             if n not in found:
                 report.append(f'{lid}: TfL lists "{stations[n]["name"]}" which the template does not')
-    out = {'fetched': time.strftime('%Y-%m-%d'), 'source': API, 'stations': {s: stations[n] for s, n in matches.items()},
+    out = {'fetched': time.strftime('%Y-%m-%d'), 'source': API, 'stations': {s: dict(stations[n], naptans=all_ids.get(s, [n])) for s, n in matches.items()},
            'report': report}
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(out, f, indent=1, ensure_ascii=False)

@@ -110,8 +110,7 @@
   };
 
   /** Build an editable document from the TfL-derived template data. */
-  function templateDoc() {
-    const t = window.TUBE_TEMPLATE;
+  function templateDoc(t = window.TUBE_TEMPLATE) {
     const doc = blankDoc();
     doc.title = 'London Underground (template)';
     doc.templateVersion = 3;
@@ -133,6 +132,7 @@
       railIcon: s.rail ? { dx: s.rail[0], dy: s.rail[1] } : null,
       zone: s.tfl && s.tfl.zone ? s.tfl.zone : '',
       naptan: s.tfl ? s.tfl.naptan : '',
+      naptans: s.tfl && s.tfl.naptans ? s.tfl.naptans.slice() : [],
       labelBox: s.box ? { dx: s.box[0], dy: s.box[1], w: s.box[2], h: s.box[3] } : null,
       hideLabel: !!s.hideLabel,
     }));

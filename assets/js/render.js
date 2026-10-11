@@ -74,6 +74,13 @@
       case 'double':
         return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round" ${extra}/>` +
           `<path d="${d}" fill="none" stroke="#fff" stroke-width="${r1(lw * 0.36)}" stroke-linejoin="round"/>`;
+      case 'thameslink':
+        return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round" ${extra}/>` +
+          `<path d="${d}" fill="none" stroke="#fff" stroke-width="${r1(lw * 0.36)}" stroke-dasharray="${r1(lw * 1.6)} ${r1(lw * 1.1)}"/>`;
+      case 'cable':
+        return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round" ${extra}/>` +
+          `<path d="${d}" fill="none" stroke="#fff" stroke-width="${r1(lw * 0.62)}" stroke-linejoin="round"/>` +
+          `<path d="${d}" fill="none" stroke="${c}" stroke-width="${r1(lw * 0.2)}" stroke-linejoin="round"/>`;
       case 'dashed':
         return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round" stroke-dasharray="${lw * 1.8} ${lw * 0.9}" ${extra}/>`;
       case 'dotted':
@@ -141,7 +148,7 @@
     const heading = (text, size = 16) => rows.push({ h: 28, head: true,
       draw: (x, y) => `<text x="${x}" y="${y + 19}" font-size="${size}" font-weight="bold" fill="${NAVY}" font-family="${font}">${esc(text)}</text>` });
     heading(k.title || 'Key to lines', 17);
-    const visibleLines = doc.lines.filter(l => !l.hidden && l.branches.some(b => b.length > 0));
+    const visibleLines = doc.lines.filter(l => !l.hidden && l.branches.some(b => b.length > 0) && (!opts.focus || opts.focus.lines.has(l.id)));
     const ordered = [...visibleLines.filter(l => !l.group), ...visibleLines.filter(l => l.group)];
     let lastGroup = '';
     for (const l of ordered) {
@@ -211,13 +218,15 @@
     const geo = geometry(doc, idx);
     const lw = geo.lw;
     const sel = opts.selection || null;
+    const focus = opts.focus || null; // {stations:Set, segs:Map(edgeKey->Set(lineId)), lines:Set, walks:[[a,b]], extra:[[a,b,color]], ends:[a,b]}
     const editing = !!opts.editing;
     const out = [];
 
-    out.push(`<rect x="0" y="0" width="${doc.width}" height="${doc.height}" fill="${esc(S.background)}" data-kind="bg"/>`);
+    const overlay = !!opts.overlay; // drawn on top of another render: no background layers
+    if (!overlay) out.push(`<rect x="0" y="0" width="${doc.width}" height="${doc.height}" fill="${esc(S.background)}" data-kind="bg"/>`);
 
     // Fare zones
-    if (S.showZones) {
+    if (S.showZones && !overlay) {
       out.push('<g class="zones">');
       for (const z of doc.zones) {
         if (z.rings && z.rings.length) {
@@ -238,14 +247,14 @@
       out.push('</g>');
     }
     // Text placed behind the network (e.g. big zone numbers)
-    for (const t of doc.texts) if (t.back) out.push(textMarkup(t, S, sel));
+    if (!overlay) for (const t of doc.texts) if (t.back) out.push(textMarkup(t, S, sel));
 
     if (editing && S.showGrid) {
       out.push(`<rect x="0" y="0" width="${doc.width}" height="${doc.height}" fill="url(#grid)" pointer-events="none"/>`);
     }
 
     // River Thames
-    if (S.showRiver && doc.river.polygons && doc.river.polygons.length) {
+    if (overlay) { /* river already drawn underneath */ } else if (S.showRiver && doc.river.polygons && doc.river.polygons.length) {
       const d = doc.river.polygons.map(pl => 'M' + pl.map(p => `${p[0]},${p[1]}`).join('L') + 'Z').join(' ');
       out.push(`<path class="river" data-kind="river" d="${d}" fill="#cceffc" stroke="#1ab5f1" stroke-width="1.2" stroke-linejoin="round" fill-rule="evenodd"/>`);
     } else if (S.showRiver && doc.river.points.length > 1) {
@@ -265,13 +274,28 @@
       for (const br of line.branches) {
         const ids = br.filter(id => idx.stations.has(id));
         if (ids.length < 2) continue;
+        // focus mode (journey planner): only the track segments the journey uses
+        const runs = [];
         let pts = [];
         for (let i = 0; i < ids.length - 1; i++) {
           if (ids[i] === ids[i + 1]) continue;
+          if (focus) {
+            const used = focus.segs.get(D.edgeKey(ids[i], ids[i + 1]));
+            if (!used || !used.has(line.id)) { if (pts.length) runs.push(pts); pts = []; continue; }
+          }
           pts = pts.concat(linePoints(doc, idx, geo, line.id, ids[i], ids[i + 1]));
         }
-        const d = roundedPath(pts, S.cornerRadius || lw * 2.2);
-        if (d) out.push(lineStroke(line, lw, d));
+        if (pts.length) runs.push(pts);
+        for (const run of runs) {
+          const d = roundedPath(run, S.cornerRadius || lw * 2.2);
+          if (d) out.push(lineStroke(line, lw, d));
+        }
+      }
+    }
+    if (focus) {
+      for (const [a, b, color] of focus.extra || []) {
+        const A = idx.stations.get(a), B = idx.stations.get(b);
+        if (A && B) out.push(`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${esc(color || '#8a8f98')}" stroke-width="${lw}" stroke-dasharray="${lw * 1.4} ${lw}"/>`);
       }
     }
     out.push('</g>');
@@ -296,6 +320,8 @@
     // Connectors between stations
     out.push('<g class="connectors">');
     for (const c of doc.connectors) {
+      if (focus && !(focus.stations.has(c.a) && focus.stations.has(c.b) &&
+          (c.type === 'internal' || (focus.walks || []).some(w => (w[0] === c.a && w[1] === c.b) || (w[0] === c.b && w[1] === c.a))))) continue;
       const SA = idx.stations.get(c.a), SB = idx.stations.get(c.b);
       if (!SA || !SB) continue;
       const A = c.da ? { x: r1(SA.x + c.da[0]), y: r1(SA.y + c.da[1]) } : SA;
@@ -314,7 +340,16 @@
 
     // Stations: markers, labels and icons
     const markers = [], labels = [], hits = [], icons = [], walkLines = [], boxes = [];
+    if (focus) {
+      // walking legs without a drawn connector
+      for (const [a, b] of focus.walks || []) {
+        if (doc.connectors.some(c => (c.a === a && c.b === b) || (c.a === b && c.b === a))) continue;
+        const A = idx.stations.get(a), B = idx.stations.get(b);
+        if (A && B) out.push(`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${S.markerColor || '#000'}" stroke-width="3.6" stroke-dasharray="2.2 2.2"/>`);
+      }
+    }
     for (const st of doc.stations) {
+      if (focus && !focus.stations.has(st.id)) continue;
       const P = [st.x, st.y];
       const lids = [...(idx.stationLines.get(st.id) || [])];
       const inter = D.isInterchange(st, idx);
@@ -441,6 +476,12 @@
     for (const g of rings) outline.push(`<circle cx="${r1(g.c[0])}" cy="${r1(g.c[1])}" r="${r1(g.r)}" fill="${ringCol(g.closed)}"/>`);
     for (const b of bars) outline.push(`<line x1="${r1(b.a[0])}" y1="${r1(b.a[1])}" x2="${r1(b.b[0])}" y2="${r1(b.b[1])}" stroke="#fff" stroke-width="${r1(BAR_IN)}"/>`);
     for (const g of rings) outline.push(`<circle cx="${r1(g.c[0])}" cy="${r1(g.c[1])}" r="${r1(g.r - RING)}" fill="#fff"/>`);
+    if (focus && focus.ends) {
+      for (const id of focus.ends) {
+        const st = idx.stations.get(id);
+        if (st) outline.unshift(`<circle cx="${st.x}" cy="${st.y}" r="${r1(RO + 7)}" fill="#ffd400" fill-opacity="0.55" stroke="#1c2c6b" stroke-width="1.5"/>`);
+      }
+    }
     out.push('<g class="boxes">', ...boxes, '</g>');
     out.push('<g class="markers">', ...walkLines, ...markers, ...outline, ...icons, '</g>');
     out.push('<g class="labels">', ...labels, '</g>');
